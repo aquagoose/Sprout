@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/Sprout.Graphics.Tests/Sprout.Graphics.Tests.csproj" />
+  </Folder>
   <Project Path="src/Sprout.Audio/Sprout.Audio.csproj" />
   <Project Path="src/Sprout.Graphics/Sprout.Graphics.csproj" />
   <Project Path="src/Sprout/Sprout.csproj" />

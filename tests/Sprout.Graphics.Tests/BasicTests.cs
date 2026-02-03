@@ -1,39 +1,40 @@
-﻿using SDL3;
+﻿using System.Drawing;
 
 namespace Sprout.Graphics.Tests;
 
-public class BasicTests
+public class BasicTests() : TestBase(Backend.OpenGL)
 {
-    private const int WindowWidth = 800;
-    private const int WindowHeight = 600;
-    
-    private IntPtr _window;
-    private GraphicsDevice _device;
-    
-    [SetUp]
-    public void Setup()
+    [Test]
+    public void CheckBackend()
     {
-        bool init = SDL.Init(SDL.InitFlags.Video);
-        Assert.That(init, Is.True, SDL.GetError);
-
-        _window = SDL.CreateWindow("Test", WindowWidth, WindowHeight, SDL.WindowFlags.OpenGL);
-        Assert.That(_window, Is.Not.EqualTo(0), SDL.GetError);
-
-        _device = GraphicsDevice.Create(_window, Backend.OpenGL);
+        Assert.That(Device.Backend, Is.EqualTo(Backend.OpenGL));
     }
-
-    [TearDown]
-    public void TearDown()
-    {
-        _device.Dispose();
-        SDL.DestroyWindow(_window);
-        SDL.Quit();
-    }
-
+    
     [Test]
     public void BasicPresentation()
     {
-        _device.Present();
-        Assert.Pass();
+        Device.Present();
+    }
+
+    [Test]
+    public void ClearColorTest()
+    {
+        Color[] colors =
+        [
+            Color.FromArgb(255, 0, 0),
+            Color.FromArgb(0, 255, 0),
+            Color.FromArgb(0, 0, 255),
+            Color.FromArgb(255, 255, 0),
+            Color.FromArgb(0, 255, 255),
+            Color.FromArgb(255, 0, 255),
+            Color.FromArgb(0, 0, 0),
+            Color.FromArgb(255, 255, 255)
+        ];
+
+        foreach (Color color in colors)
+        {
+            Device.Clear(color);
+            Device.Present();
+        }
     }
 }

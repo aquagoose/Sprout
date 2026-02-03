@@ -26,6 +26,12 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         
         _gl = GL.GetApi(SDL.GLGetProcAddress);
     }
+    
+    public override void Clear(float r, float g, float b, float a = 1)
+    {
+        _gl.ClearColor(r, g, b, a);
+        _gl.Clear(ClearBufferMask.ColorBufferBit);
+    }
 
     public override void Present()
     {

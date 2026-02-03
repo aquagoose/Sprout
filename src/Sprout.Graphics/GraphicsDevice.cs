@@ -1,4 +1,5 @@
-﻿using Sprout.Graphics.OpenGL;
+﻿using System.Drawing;
+using Sprout.Graphics.OpenGL;
 
 namespace Sprout.Graphics;
 
@@ -17,6 +18,22 @@ public abstract class GraphicsDevice : IDisposable
     /// </summary>
     public abstract Backend Backend { get; }
 
+    /// <summary>
+    /// Clear the current render target with the given clear color.
+    /// </summary>
+    /// <param name="r">The red component.</param>
+    /// <param name="g">The green component.</param>
+    /// <param name="b">The blue component.</param>
+    /// <param name="a">The alpha component.</param>
+    public abstract void Clear(float r, float g, float b, float a = 1.0f);
+
+    /// <summary>
+    /// Clear the current render target with the given clear color.
+    /// </summary>
+    /// <param name="color">The color to clea with.</param>
+    public void Clear(Color color)
+        => Clear(color.R / 255.0f, color.G / 255.0f, color.B / 255.0f, color.A / 255.0f);
+    
     /// <summary>
     /// Present to the current window.
     /// </summary>

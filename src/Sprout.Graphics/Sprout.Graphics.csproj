@@ -3,6 +3,7 @@
     <ItemGroup>
       <PackageReference Include="SDL3-CS" Version="3.3.7" />
       <PackageReference Include="Silk.NET.OpenGL" Version="2.23.0" />
+      <PackageReference Include="Vortice.Dxc" Version="3.8.2" />
     </ItemGroup>
 
 </Project>

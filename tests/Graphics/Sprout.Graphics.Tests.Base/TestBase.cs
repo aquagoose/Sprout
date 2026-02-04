@@ -38,7 +38,9 @@ public abstract class TestBase(string testName) : IDisposable
             }
         }
 
-        _window = SDL.CreateWindow(testName, WindowWidth, WindowHeight, flags);
+        string appName = $"{testName} ({backend})";
+        SDL.SetAppMetadata(appName, "1.0.0", "");
+        _window = SDL.CreateWindow(appName, WindowWidth, WindowHeight, flags);
         if (_window == 0)
             throw new Exception($"Failed to create SDL window: {SDL.GetError()}");
 

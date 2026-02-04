@@ -26,7 +26,12 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         
         _gl = GL.GetApi(SDL.GLGetProcAddress);
     }
-    
+
+    public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
+    {
+        return new GLShader(_gl, in attachments);
+    }
+
     public override void Clear(float r, float g, float b, float a = 1)
     {
         _gl.ClearColor(r, g, b, a);

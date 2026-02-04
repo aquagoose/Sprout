@@ -18,6 +18,8 @@ public abstract class GraphicsDevice : IDisposable
     /// </summary>
     public abstract Backend Backend { get; }
 
+    public abstract Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments);
+
     /// <summary>
     /// Clear the current render target with the given clear color.
     /// </summary>

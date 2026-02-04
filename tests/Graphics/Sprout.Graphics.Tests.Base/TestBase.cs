@@ -12,6 +12,8 @@ public abstract class TestBase(string testName) : IDisposable
 
     protected GraphicsDevice Device;
 
+    protected virtual void Load() { }
+
     protected abstract void Loop(float dt);
 
     public void Run()
@@ -45,6 +47,8 @@ public abstract class TestBase(string testName) : IDisposable
             throw new Exception($"Failed to create SDL window: {SDL.GetError()}");
 
         Device = GraphicsDevice.Create(_window, backend);
+        
+        Load();
         
         _alive = true;
         while (_alive)

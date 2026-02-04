@@ -2,6 +2,7 @@
   <Folder Name="/tests/" />
   <Folder Name="/tests/Graphics/">
     <Project Path="tests/Graphics/Sprout.Graphics.Tests.Base/Sprout.Graphics.Tests.Base.csproj" />
+    <Project Path="tests/Graphics/Sprout.Graphics.Tests.SimpleShader/Sprout.Graphics.Tests.SimpleShader.csproj" />
     <Project Path="tests\Graphics\Sprout.Graphics.Tests.ClearColor\Sprout.Graphics.Tests.ClearColor.csproj" />
   </Folder>
   <Project Path="src/Sprout.Audio/Sprout.Audio.csproj" />

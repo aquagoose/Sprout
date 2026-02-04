@@ -13,7 +13,7 @@ public class BasicTests() : TestBase(Backend.OpenGL)
     [Test]
     public void BasicPresentation()
     {
-        Device.Present();
+        EnterLoop();
     }
 
     [Test]
@@ -31,10 +31,23 @@ public class BasicTests() : TestBase(Backend.OpenGL)
             Color.FromArgb(255, 255, 255)
         ];
 
-        foreach (Color color in colors)
+        int currentColor = 0;
+        float counter = 0;
+        
+        EnterLoop(dt =>
         {
+            counter += dt;
+            if (counter >= 1.0f)
+            {
+                counter -= 1.0f;
+                currentColor++;
+                if (currentColor >= colors.Length)
+                    currentColor = 0;
+            }
+
+            Color color = colors[currentColor];
+            
             Device.Clear(color);
-            Device.Present();
-        }
+        });
     }
 }

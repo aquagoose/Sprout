@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Silk.NET.SPIRV.Cross;
@@ -10,6 +11,7 @@ using SpvResult = Silk.NET.SPIRV.Cross.Result;
 
 namespace Sprout.Graphics.Utils;
 
+[SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
 internal static class ShaderUtils
 {
     private static Cross _spirv;
@@ -56,16 +58,13 @@ internal static class ShaderUtils
             args.Add(includeDirectory);
         }
 
-        char* pEntryPoint = (char*) Marshal.StringToHGlobalAnsi(entryPoint);
-        char* pProfile = (char*) Marshal.StringToHGlobalAnsi(profile);
-
-        char** pArgs = stackalloc char*[args.Count];
-        for (int i = 0; i < args.Count; i++)
-            pArgs[i] = (char*) Marshal.StringToHGlobalAnsi(args[i]);
+        using DxcString pEntryPoint = entryPoint;
+        using DxcString pProfile = profile;
+        using DxcStringArray pArgs = new(args);
 
         IDxcCompilerArgs* compilerArgs;
         CheckResult(
-            utils->BuildArguments(null, pEntryPoint, pProfile, pArgs, (uint) args.Count, null, 0, &compilerArgs),
+            utils->BuildArguments(null, pEntryPoint, pProfile, pArgs, pArgs.Length, null, 0, &compilerArgs),
             "Build arguments");
 
         IDxcIncludeHandler* includeHandler;
@@ -112,7 +111,7 @@ internal static class ShaderUtils
             ParsedIr* ir;
             fixed (byte* pSpirv = spirv)
             {
-                SpvResult result = _spirv.ContextParseSpirv(context, (uint*) pSpirv, (nuint) spirv.Length, &ir);
+                SpvResult result = _spirv.ContextParseSpirv(context, (uint*) pSpirv, (nuint) spirv.Length / 4, &ir);
                 if (result != SpvResult.Success)
                     throw new Exception($"Failed to parse Spir-V: {_spirv.ContextGetLastErrorStringS(context)}");
             }

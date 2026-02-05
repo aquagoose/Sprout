@@ -20,6 +20,8 @@ public abstract class GraphicsDevice : IDisposable
 
     public abstract Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments);
 
+    public abstract Renderable CreateRenderable(in RenderableInfo info);
+
     /// <summary>
     /// Clear the current render target with the given clear color.
     /// </summary>

@@ -57,6 +57,10 @@ internal sealed class GLShader : Shader
     
     public override void Dispose()
     {
+        if (IsDisposed)
+            return;
+        IsDisposed = true;
+        
         _gl.DeleteProgram(Program);
     }
 }

@@ -12,7 +12,7 @@ using SpvResult = Silk.NET.SPIRV.Cross.Result;
 namespace Sprout.Graphics.Utils;
 
 [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
-internal static class ShaderUtils
+public static class ShaderUtils
 {
     private static Cross _spirv;
 
@@ -21,7 +21,7 @@ internal static class ShaderUtils
         _spirv = Cross.GetApi();
     }
 
-    public static string TranspileHLSL(Backend backend, ShaderStage stage, string hlsl, string entryPoint, string? includeDirectory = null)
+    public static byte[] TranspileHLSL(Backend backend, ShaderStage stage, string hlsl, string entryPoint, string? includeDirectory = null)
     {
         byte[] spirv = HlslToSpirv(stage, hlsl, entryPoint, includeDirectory);
 
@@ -128,7 +128,7 @@ internal static class ShaderUtils
         }
     }
 
-    public static unsafe string SpirvToGLSL(ShaderStage stage, byte[] spirv, string entryPoint)
+    public static unsafe byte[] SpirvToGLSL(ShaderStage stage, byte[] spirv, string entryPoint)
     {
         Context* context;
         CheckResult(_spirv.ContextCreate(&context), "Create compiler");
@@ -155,10 +155,14 @@ internal static class ShaderUtils
             
             CheckResult(_spirv.CompilerInstallCompilerOptions(compiler, options), "Install compiler options");
 
-            byte* output;
-            CheckResult(_spirv.CompilerCompile(compiler, &output), "Compile");
+            byte* pOutput;
+            CheckResult(_spirv.CompilerCompile(compiler, &pOutput), "Compile");
 
-            return new string((sbyte*) output);
+            byte[] output = new byte[strlen(pOutput)];
+            fixed (byte* pOut = output)
+                Unsafe.CopyBlock(pOut, pOutput, (uint) output.Length);
+
+            return output;
         }
         finally
         {
@@ -176,5 +180,12 @@ internal static class ShaderUtils
     {
         if (result != Result.Success)
             throw new Exception($"SPIRV-Cross operation '{operation}' failed: {result}");
+    }
+
+    private static unsafe uint strlen(byte* str)
+    {
+        uint size = 0;
+        while (str[size++] != 0) { }
+        return size;
     }
 }

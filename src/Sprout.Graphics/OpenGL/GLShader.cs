@@ -1,3 +1,4 @@
+using System.Text;
 using Silk.NET.OpenGL;
 using Sprout.Graphics.Utils;
 
@@ -21,8 +22,6 @@ internal sealed class GLShader : Shader
         for (int i = 0; i < attachments.Length; i++)
         {
             ref readonly ShaderAttachment attachment = ref attachments[i];
-            string glsl = ShaderUtils.TranspileHLSL(Backend.OpenGL, attachment.Stage, attachment.Source,
-                attachment.EntryPoint);
 
             ShaderType type = attachment.Stage switch
             {
@@ -33,7 +32,7 @@ internal sealed class GLShader : Shader
             
             uint shader = _gl.CreateShader(type);
             shaders[i] = shader;
-            _gl.ShaderSource(shader, glsl);
+            _gl.ShaderSource(shader, Encoding.UTF8.GetString(attachment.Source) /* TODO: Do this properly. */);
             _gl.CompileShader(shader);
 
             _gl.GetShader(shader, ShaderParameterName.CompileStatus, out int compileStatus);

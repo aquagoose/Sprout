@@ -5,6 +5,9 @@
     <Project Path="tests/Graphics/Sprout.Graphics.Tests.SimpleShader/Sprout.Graphics.Tests.SimpleShader.csproj" />
     <Project Path="tests\Graphics\Sprout.Graphics.Tests.ClearColor\Sprout.Graphics.Tests.ClearColor.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/CompileShaders/CompileShaders.csproj" />
+  </Folder>
   <Project Path="src/Sprout.Audio/Sprout.Audio.csproj" />
   <Project Path="src/Sprout.Graphics/Sprout.Graphics.csproj" />
   <Project Path="src/Sprout/Sprout.csproj" />

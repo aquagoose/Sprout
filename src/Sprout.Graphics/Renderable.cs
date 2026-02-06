@@ -11,6 +11,8 @@ public abstract class Renderable : IDisposable
 
     public abstract void UpdateIndices(uint offset, ReadOnlySpan<uint> indices);
 
+    public abstract void PushTexture(uint index, Texture texture);
+
     public abstract void Draw();
     
     public abstract void Draw(uint numElements);

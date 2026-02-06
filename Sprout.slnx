@@ -5,6 +5,7 @@
     <Project Path="tests/Graphics/Sprout.Graphics.Tests.BuffersTest/Sprout.Graphics.Tests.BuffersTest.csproj" />
     <Project Path="tests/Graphics/Sprout.Graphics.Tests.PCSH/Sprout.Graphics.Tests.PCSH.csproj" />
     <Project Path="tests/Graphics/Sprout.Graphics.Tests.SimpleShader/Sprout.Graphics.Tests.SimpleShader.csproj" />
+    <Project Path="tests/Graphics/Sprout.Graphics.Tests.Texture/Sprout.Graphics.Tests.Texture.csproj" />
     <Project Path="tests\Graphics\Sprout.Graphics.Tests.ClearColor\Sprout.Graphics.Tests.ClearColor.csproj" />
   </Folder>
   <Folder Name="/tools/">

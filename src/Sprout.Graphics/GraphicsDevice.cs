@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using Sprout.Graphics.OpenGL;
+using StbImageSharp;
 
 namespace Sprout.Graphics;
 
@@ -19,6 +20,28 @@ public abstract class GraphicsDevice : IDisposable
     public abstract Backend Backend { get; }
 
     public abstract Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments);
+
+    protected abstract unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, void* data);
+
+    public unsafe Texture CreateTexture(uint width, uint height, PixelFormat format)
+        => CreateTexture(width, height, format, null);
+
+    public unsafe Texture CreateTexture<T>(uint width, uint height, PixelFormat format, ReadOnlySpan<T> data)
+        where T : unmanaged
+    {
+        fixed (void* pData = data)
+            return CreateTexture(width, height, format, pData);
+    }
+
+    public Texture CreateTexture<T>(uint width, uint height, PixelFormat format, T[] data) where T : unmanaged
+        => CreateTexture(width, height, format, data.AsSpan());
+
+    public Texture CreateTexture(string path)
+    {
+        using FileStream stream = File.OpenRead(path);
+        ImageResult result = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
+        return CreateTexture((uint) result.Width, (uint) result.Height, PixelFormat.RGBA8, result.Data);
+    }
 
     public abstract Renderable CreateRenderable(in RenderableInfo info);
 

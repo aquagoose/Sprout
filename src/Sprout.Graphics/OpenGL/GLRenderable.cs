@@ -99,6 +99,13 @@ internal sealed unsafe class GLRenderable : Renderable
         }
     }
 
+    public override void PushTexture(uint index, Texture texture)
+    {
+        GLTexture glTexture = (GLTexture) texture;
+        _gl.ActiveTexture(TextureUnit.Texture0 + (int) index);
+        _gl.BindTexture(TextureTarget.Texture2D, glTexture.Texture);
+    }
+
     public override void Draw()
         => Draw(_numDraws);
 

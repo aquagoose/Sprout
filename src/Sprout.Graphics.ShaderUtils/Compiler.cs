@@ -198,6 +198,10 @@ public static class Compiler
             for (uint i = 0; i < numResources; i++)
                 _spirv.CompilerSetName(compiler, reflectedResources[i].Id, $"sp_ToFrag_var{i}");
             
+            CheckResult(_spirv.CompilerBuildCombinedImageSamplers(compiler), "Build combined image samplers");
+            uint samplerId;
+            CheckResult(_spirv.CompilerBuildDummySamplerForCombinedImages(compiler, &samplerId), "Build dummy sampler");
+            
             byte* pOutput;
             CheckResult(_spirv.CompilerCompile(compiler, &pOutput), "Compile");
 

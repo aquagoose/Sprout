@@ -32,6 +32,11 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         return new GLShader(_gl, in attachments);
     }
 
+    protected override unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, void* data)
+    {
+        return new GLTexture(_gl, width, height, format, data);
+    }
+
     public override Renderable CreateRenderable(in RenderableInfo info)
     {
         return new GLRenderable(_gl, in info);

@@ -25,7 +25,7 @@ public struct RenderableInfo
     /// <summary>
     /// The vertex shader input layout.
     /// </summary>
-    public VertexAttribute[] VertexInput;
+    public VertexAttribute[]? VertexInput;
     
     /// <summary>
     /// The <see cref="Sprout.Graphics.Shader"/> to use.

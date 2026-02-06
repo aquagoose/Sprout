@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Sprout.Graphics;
 using Sprout.Graphics.ShaderUtils;
 
@@ -6,9 +7,10 @@ namespace CompileShaders;
 
 public static class CompileShaders
 {
-    public static void Main(string[] args)
+    public static int Main(string[] args)
     {
-        string? inPath = null;
+        string? inFile = null;
+        string? outFile = null;
         string? vtxEntry = null;
         string? pxlEntry = null;
 
@@ -25,35 +27,48 @@ public static class CompileShaders
                     case "--pixelEntry" or "-pE":
                         ReadArg(args, ref argIndex, out pxlEntry);
                         break;
+                    case "--output" or "-o":
+                        ReadArg(args, ref argIndex, out outFile);
+                        break;
                     default:
                         Console.WriteLine($"Unrecognized argument '{arg}'.");
                         PrintHelp();
-                        return;
+                        return 1;
                 }
             }
             else
             {
-                if (inPath != null)
+                if (inFile != null)
                 {
                     Console.WriteLine("Cannot provide more than one infile.");
                     PrintHelp();
-                    return;
+                    return 1;
                 }
 
-                ReadArg(args, ref argIndex, out inPath);
+                inFile = arg;
+                outFile ??= Path.GetFileNameWithoutExtension(inFile) + ".pcsh";
             }
         }
 
-        if (inPath == null)
+        if (inFile == null)
         {
             Console.WriteLine("No infile provided.");
             PrintHelp();
-            return;
+            return 1;
+        }
+        
+        Debug.Assert(outFile != null);
+
+        if (vtxEntry == null && pxlEntry == null)
+        {
+            Console.WriteLine("Must contain at least one entry point.");
+            PrintHelp();
+            return 1;
         }
 
-        string source = File.ReadAllText(inPath);
+        string source = File.ReadAllText(inFile);
 
-        List<(Backend backend, ShaderStage stage, byte[] data)> compiledShaders = [];
+        PreCompiledShader pcsh = new();
         foreach (Backend backend in Enum.GetValues<Backend>())
         {
             if (backend == Backend.Unknown)
@@ -63,9 +78,19 @@ public static class CompileShaders
             if (vtxEntry != null)
             {
                 byte[] shader = Compiler.TranspileHLSL(backend, ShaderStage.Vertex, source, vtxEntry);
-                compiledShaders.Add((backend, ShaderStage.Vertex, shader));
+                pcsh.AddSource(backend, ShaderStage.Vertex, shader);
+            }
+
+            if (pxlEntry != null)
+            {
+                byte[] shader = Compiler.TranspileHLSL(backend, ShaderStage.Pixel, source, pxlEntry);
+                pcsh.AddSource(backend, ShaderStage.Pixel, shader);
             }
         }
+        
+        pcsh.Save(outFile);
+
+        return 0;
     }
     
     private static bool ReadArg(string[] args, ref int argIndex, [NotNullWhen(true)] out string? arg)

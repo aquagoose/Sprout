@@ -45,34 +45,37 @@ internal sealed unsafe class GLRenderable : Renderable
 
             _numDraws = info.NumIndices;
         }
-        
-        _gl.UseProgram(_shader.Program);
-        
-        for (int i = 0; i < info.VertexInput.Length; i++)
+
+        if (info.VertexInput != null)
         {
-            ref readonly VertexAttribute attribute = ref info.VertexInput[i];
-            uint stride = info.VertexSize;
-            void* offset = (void*) attribute.Offset;
-            uint location = attribute.Location;
-            
-            _gl.EnableVertexAttribArray(location);
-            
-            switch (attribute.Type)
+            _gl.UseProgram(_shader.Program);
+
+            for (int i = 0; i < info.VertexInput.Length; i++)
             {
-                case AttributeType.Float:
-                    _gl.VertexAttribPointer(location, 1, VertexAttribPointerType.Float, false, stride, offset);
-                    break;
-                case AttributeType.Float2:
-                    _gl.VertexAttribPointer(location, 2, VertexAttribPointerType.Float, false, stride, offset);
-                    break;
-                case AttributeType.Float3:
-                    _gl.VertexAttribPointer(location, 3, VertexAttribPointerType.Float, false, stride, offset);
-                    break;
-                case AttributeType.Float4:
-                    _gl.VertexAttribPointer(location, 4, VertexAttribPointerType.Float, false, stride, offset);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                ref readonly VertexAttribute attribute = ref info.VertexInput[i];
+                uint stride = info.VertexSize;
+                void* offset = (void*) attribute.Offset;
+                uint location = attribute.Location;
+
+                _gl.EnableVertexAttribArray(location);
+
+                switch (attribute.Type)
+                {
+                    case AttributeType.Float:
+                        _gl.VertexAttribPointer(location, 1, VertexAttribPointerType.Float, false, stride, offset);
+                        break;
+                    case AttributeType.Float2:
+                        _gl.VertexAttribPointer(location, 2, VertexAttribPointerType.Float, false, stride, offset);
+                        break;
+                    case AttributeType.Float3:
+                        _gl.VertexAttribPointer(location, 3, VertexAttribPointerType.Float, false, stride, offset);
+                        break;
+                    case AttributeType.Float4:
+                        _gl.VertexAttribPointer(location, 4, VertexAttribPointerType.Float, false, stride, offset);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
         }
     }

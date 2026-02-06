@@ -78,13 +78,13 @@ public static class CompileShaders
             if (vtxEntry != null)
             {
                 byte[] shader = Compiler.TranspileHLSL(backend, ShaderStage.Vertex, source, vtxEntry);
-                pcsh.AddSource(backend, ShaderStage.Vertex, shader);
+                pcsh.AddSource(backend, ShaderStage.Vertex, vtxEntry, shader);
             }
 
             if (pxlEntry != null)
             {
                 byte[] shader = Compiler.TranspileHLSL(backend, ShaderStage.Pixel, source, pxlEntry);
-                pcsh.AddSource(backend, ShaderStage.Pixel, shader);
+                pcsh.AddSource(backend, ShaderStage.Pixel, pxlEntry, shader);
             }
         }
         

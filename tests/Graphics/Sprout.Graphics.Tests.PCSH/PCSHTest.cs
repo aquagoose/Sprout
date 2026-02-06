@@ -11,9 +11,11 @@ public class PCSHTest() : TestBase("PCSH Test")
     protected override void Load()
     {
         PreCompiledShader pcsh = PreCompiledShader.FromFile("Shader.pcsh");
-        _shader = Device.CreateShader(
-            new ShaderAttachment(ShaderStage.Vertex, pcsh.GetSource(Device.Backend, ShaderStage.Vertex), "VSMain"),
-            new ShaderAttachment(ShaderStage.Pixel, pcsh.GetSource(Device.Backend, ShaderStage.Pixel), "PSMain"));
+        byte[] vtxSrc = pcsh.GetSource(Device.Backend, ShaderStage.Vertex, out string vtxEntry);
+        byte[] pxlSrc = pcsh.GetSource(Device.Backend, ShaderStage.Pixel, out string pxlEntry);
+
+        _shader = Device.CreateShader(new ShaderAttachment(ShaderStage.Vertex, vtxSrc, vtxEntry),
+            new ShaderAttachment(ShaderStage.Pixel, pxlSrc, pxlEntry));
 
         RenderableInfo info = new()
         {

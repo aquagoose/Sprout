@@ -5,21 +5,22 @@ public class PreCompiledShader
     private const uint Version = 1;
     private const uint Magic = 0x48534350;
 
-    private Dictionary<(Backend backend, ShaderStage stage), byte[]> _sourceList;
+    private Dictionary<(Backend backend, ShaderStage stage), (string entryPoint, byte[] source)> _sourceList;
 
     public PreCompiledShader()
     {
         _sourceList = [];
     }
 
-    public byte[] GetSource(Backend backend, ShaderStage stage)
+    public byte[] GetSource(Backend backend, ShaderStage stage, out string entryPoint)
     {
-        return _sourceList[(backend, stage)];
+        (entryPoint, byte[] source) = _sourceList[(backend, stage)];
+        return source;
     }
 
-    public void AddSource(Backend backend, ShaderStage stage, byte[] source)
+    public void AddSource(Backend backend, ShaderStage stage, string entryPoint, byte[] source)
     {
-        _sourceList.Add((backend, stage), source);
+        _sourceList.Add((backend, stage), (entryPoint, source));
     }
 
     public void Save(string path)
@@ -32,10 +33,11 @@ public class PreCompiledShader
         
         writer.Write(_sourceList.Count);
 
-        foreach (((Backend backend, ShaderStage stage), byte[] data) in _sourceList)
+        foreach (((Backend backend, ShaderStage stage), (string entryPoint, byte[] data)) in _sourceList)
         {
             byte backendStageFlag = (byte) (((byte) backend << 4) | (byte) stage);
             writer.Write(backendStageFlag);
+            writer.Write(entryPoint);
             writer.Write(data.Length);
             writer.Write(data);
         }
@@ -59,10 +61,12 @@ public class PreCompiledShader
             Backend backend = (Backend) (backendStageFlag >> 4);
             ShaderStage stage = (ShaderStage) (backendStageFlag & 0xF);
 
+            string entryPoint = reader.ReadString();
+            
             int length = reader.ReadInt32();
             byte[] data = reader.ReadBytes(length);
             
-            pcsh.AddSource(backend, stage, data);
+            pcsh.AddSource(backend, stage, entryPoint, data);
         }
 
         return pcsh;

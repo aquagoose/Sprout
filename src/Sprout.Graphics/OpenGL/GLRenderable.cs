@@ -13,6 +13,8 @@ internal sealed unsafe class GLRenderable : Renderable
 
     private readonly uint _vbo;
     private readonly uint _ebo;
+
+    private readonly uint _numDraws;
     
     public GLRenderable(GL gl, ref readonly RenderableInfo info)
     {
@@ -29,6 +31,8 @@ internal sealed unsafe class GLRenderable : Renderable
             _vbo = _gl.GenBuffer();
             _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo);
             _gl.BufferData(BufferTargetARB.ArrayBuffer, sizeInBytes, null, BufferUsageARB.StaticDraw);
+
+            _numDraws = info.NumVertices;
         }
 
         if (info.NumIndices > 0)
@@ -38,6 +42,8 @@ internal sealed unsafe class GLRenderable : Renderable
             _ebo = _gl.GenBuffer();
             _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
             _gl.BufferData(BufferTargetARB.ElementArrayBuffer, sizeInBytes, null, BufferUsageARB.StaticDraw);
+
+            _numDraws = info.NumIndices;
         }
         
         _gl.UseProgram(_shader.Program);
@@ -71,18 +77,27 @@ internal sealed unsafe class GLRenderable : Renderable
         }
     }
 
-    public override void UpdateVertices<T>(ReadOnlySpan<T> vertices)
+    public override void UpdateVertices<T>(uint offset, ReadOnlySpan<T> vertices)
     {
         _gl.BindVertexArray(_vao);
         fixed (T* pVertices = vertices)
-            _gl.BufferSubData(BufferTargetARB.ArrayBuffer, 0, (nuint) (vertices.Length * sizeof(T)), pVertices);
+        {
+            _gl.BufferSubData(BufferTargetARB.ArrayBuffer, (nint) offset, (nuint) (vertices.Length * sizeof(T)),
+                pVertices);
+        }
     }
-    public override void UpdateIndices(ReadOnlySpan<uint> indices)
+    public override void UpdateIndices(uint offset, ReadOnlySpan<uint> indices)
     {
         _gl.BindVertexArray(_vao);
         fixed (uint* pIndices = indices)
-            _gl.BufferSubData(BufferTargetARB.ElementArrayBuffer, 0, (nuint) (indices.Length * sizeof(uint)), pIndices);
+        {
+            _gl.BufferSubData(BufferTargetARB.ElementArrayBuffer, (nint) offset,
+                (nuint) (indices.Length * sizeof(uint)), pIndices);
+        }
     }
+
+    public override void Draw()
+        => Draw(_numDraws);
 
     public override void Draw(uint numElements)
     {

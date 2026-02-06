@@ -46,14 +46,14 @@ public class BuffersTest() : TestBase("Buffers Test")
         };
         
         _renderable = Device.CreateRenderable(in info);
-        _renderable.UpdateVertices(vertices);
-        _renderable.UpdateIndices(indices);
+        _renderable.UpdateVertices(0, vertices);
+        _renderable.UpdateIndices(0, indices);
     }
 
     protected override void Loop(float dt)
     {
         Device.Clear(Color.CornflowerBlue);
-        _renderable.Draw(6);
+        _renderable.Draw();
         Device.Present();
     }
 }

@@ -9,6 +9,7 @@
     <Project Path="tools/CompileShaders/CompileShaders.csproj" />
   </Folder>
   <Project Path="src/Sprout.Audio/Sprout.Audio.csproj" />
+  <Project Path="src/Sprout.Graphics.ShaderUtils/Sprout.Graphics.ShaderUtils.csproj" />
   <Project Path="src/Sprout.Graphics/Sprout.Graphics.csproj" />
   <Project Path="src/Sprout/Sprout.csproj" />
 </Solution>

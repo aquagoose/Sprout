@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\src\Sprout.Graphics.ShaderUtils\Sprout.Graphics.ShaderUtils.csproj" />
       <ProjectReference Include="..\Sprout.Graphics.Tests.Base\Sprout.Graphics.Tests.Base.csproj" />
     </ItemGroup>
 

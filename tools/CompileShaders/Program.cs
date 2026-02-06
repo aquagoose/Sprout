@@ -1,5 +1,4 @@
 ﻿using Sprout.Graphics;
-using Sprout.Graphics.Utils;
 
 string path = args[0];
 string outPath = args[1];

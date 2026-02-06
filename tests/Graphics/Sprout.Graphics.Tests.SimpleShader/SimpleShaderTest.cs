@@ -1,4 +1,5 @@
 using System.Drawing;
+using Sprout.Graphics.ShaderUtils;
 using Sprout.Graphics.Tests.Base;
 
 namespace Sprout.Graphics.Tests.SimpleShader;
@@ -11,8 +12,11 @@ public class SimpleShaderTest() : TestBase("Simple Shader Test")
     protected override void Load()
     {
         string hlsl = File.ReadAllText("Shader.hlsl");
-        _shader = Device.CreateShader(new ShaderAttachment(ShaderStage.Vertex, hlsl, "VSMain"),
-            new ShaderAttachment(ShaderStage.Pixel, hlsl, "PSMain"));
+        byte[] vtx = Compiler.TranspileHLSL(Device.Backend, ShaderStage.Vertex, hlsl, "VSMain");
+        byte[] pxl = Compiler.TranspileHLSL(Device.Backend, ShaderStage.Pixel, hlsl, "PSMain");
+
+        _shader = Device.CreateShader(new ShaderAttachment(ShaderStage.Vertex, vtx, "VSMain"),
+            new ShaderAttachment(ShaderStage.Pixel, pxl, "PSMain"));
 
         RenderableInfo info = new()
         {
@@ -30,6 +34,7 @@ public class SimpleShaderTest() : TestBase("Simple Shader Test")
 
     public override void Dispose()
     {
+        _renderable.Dispose();
         _shader.Dispose();
         
         base.Dispose();

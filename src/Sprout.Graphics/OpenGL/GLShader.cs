@@ -1,6 +1,5 @@
 using System.Text;
 using Silk.NET.OpenGL;
-using Sprout.Graphics.Utils;
 
 namespace Sprout.Graphics.OpenGL;
 

@@ -31,7 +31,9 @@ internal sealed class GLShader : Shader
             
             uint shader = _gl.CreateShader(type);
             shaders[i] = shader;
-            _gl.ShaderSource(shader, Encoding.UTF8.GetString(attachment.Source) /* TODO: Do this properly. */);
+            string src = Encoding.UTF8.GetString(attachment.Source);
+            Console.WriteLine(src);
+            _gl.ShaderSource(shader, src /* TODO: Do this properly. */);
             _gl.CompileShader(shader);
 
             _gl.GetShader(shader, ShaderParameterName.CompileStatus, out int compileStatus);

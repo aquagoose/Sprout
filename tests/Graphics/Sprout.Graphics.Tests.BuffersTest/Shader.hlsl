@@ -10,6 +10,11 @@ struct VSOutput
     float3 Color:    COLOR0;
 };
 
+struct PSOutput
+{
+    float4 Color: SV_Target0;
+};
+
 VSOutput VSMain(const in VSInput input)
 {
     VSOutput output;

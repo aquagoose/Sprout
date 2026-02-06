@@ -163,6 +163,40 @@ public static class Compiler
                 _ => throw new ArgumentOutOfRangeException(nameof(stage), stage, null)
             };
             CheckResult(_spirv.CompilerSetEntryPoint(compiler, entryPoint, model), "Set entry point");
+
+            Resources* resources;
+            CheckResult(_spirv.CompilerCreateShaderResources(compiler, &resources), "Create shader resources");
+
+            // In the next section, we rename all output attributes in the vertex shader, and all input attributes in the
+            // fragment shader, to sp_ToFrag_varX. This is because for GL 3.3, SPIRV-Cross doesn't add layout (location = X)
+            // to any of the output/input attributes, because this wasn't supported until 4.1.
+            // By default, SPIRV-Cross doesn't name the values the same. Meaning that the shader cannot link, as the
+            // output value of the vertex shader is out_var_COLOR0, and the input value to the fragment shader is
+            // in_var_COLOR0. GL 3.3 expects these two attributes to have the same name, so it doesn't work.
+            // So, instead of updating to 4.1, I have instead opted to rename the attributes to sp_ToFrag_varX.
+            // This fixes the issue and ensures both shaders have the same output/input names.
+            // I'm sure there's some edge case where this won't work but Sprout expects vertex & fragment shaders to
+            // come in pairs so it shouldn't be an issue hopefully.
+            
+            ReflectedResource* reflectedResources;
+            nuint numResources;
+
+            switch (stage)
+            {
+                case ShaderStage.Vertex:
+                    _spirv.ResourcesGetResourceListForType(resources, ResourceType.StageOutput, &reflectedResources,
+                        &numResources);
+                    break;
+                case ShaderStage.Pixel:
+                    _spirv.ResourcesGetResourceListForType(resources, ResourceType.StageInput, &reflectedResources,
+                        &numResources);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(stage), stage, null);
+            }
+            
+            for (uint i = 0; i < numResources; i++)
+                _spirv.CompilerSetName(compiler, reflectedResources[i].Id, $"sp_ToFrag_var{i}");
             
             byte* pOutput;
             CheckResult(_spirv.CompilerCompile(compiler, &pOutput), "Compile");

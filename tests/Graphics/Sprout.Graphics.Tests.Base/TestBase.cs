@@ -23,30 +23,39 @@ public abstract class TestBase(string testName) : IDisposable
         if (!SDL.Init(SDL.InitFlags.Video | SDL.InitFlags.Events))
             throw new Exception($"Failed to initialize SDL: {SDL.GetError()}");
 
-        Backend[] availableBackends = Enum.GetValues<Backend>();
-        int numBackends = availableBackends.Length - 1;
-        SDL_MessageBoxButtonData* buttons = stackalloc SDL_MessageBoxButtonData[numBackends];
-
-        for (int i = 1; i < availableBackends.Length; i++)
-        {
-            buttons[i - 1] = new SDL_MessageBoxButtonData
-            {
-                ButtonID = (int) availableBackends[i],
-                Text = Marshal.StringToHGlobalAnsi(availableBackends[i].ToString())
-            };
-        }
+        Backend backend;
         
-        SDL.MessageBoxData boxData = new()
+        string? forceBackend = Environment.GetEnvironmentVariable("SPROUT_TEST_BACKEND");
+        if (forceBackend != null)
+            backend = Enum.Parse<Backend>(forceBackend);
+        else
         {
-            Flags = SDL.MessageBoxFlags.Information,
-            NumButtons = numBackends,
-            Buttons = (nint) buttons,
-            Title = "Select Backend",
-            Message = $"Select backend to run {testName}.",
-        };
 
-        SDL.ShowMessageBox(in boxData, out int buttonId);
-        Backend backend = (Backend) buttonId;
+            Backend[] availableBackends = Enum.GetValues<Backend>();
+            int numBackends = availableBackends.Length - 1;
+            SDL_MessageBoxButtonData* buttons = stackalloc SDL_MessageBoxButtonData[numBackends];
+
+            for (int i = 1; i < availableBackends.Length; i++)
+            {
+                buttons[i - 1] = new SDL_MessageBoxButtonData
+                {
+                    ButtonID = (int) availableBackends[i],
+                    Text = Marshal.StringToHGlobalAnsi(availableBackends[i].ToString())
+                };
+            }
+
+            SDL.MessageBoxData boxData = new()
+            {
+                Flags = SDL.MessageBoxFlags.Information,
+                NumButtons = numBackends,
+                Buttons = (nint) buttons,
+                Title = "Select Backend",
+                Message = $"Select backend to run {testName}.",
+            };
+
+            SDL.ShowMessageBox(in boxData, out int buttonId);
+            backend = (Backend) buttonId;
+        }
 
         SDL.WindowFlags flags = 0;
 

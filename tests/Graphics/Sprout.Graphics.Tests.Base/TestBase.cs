@@ -52,6 +52,12 @@ public abstract class TestBase(string testName) : IDisposable
 
         switch (backend)
         {
+            case Backend.Vulkan:
+            {
+                flags |= SDL.WindowFlags.Vulkan;
+                break;
+            }
+            
             case Backend.OpenGL:
             {
                 flags |= SDL.WindowFlags.OpenGL;

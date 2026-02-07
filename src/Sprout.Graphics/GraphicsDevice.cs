@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using Sprout.Graphics.OpenGL;
+using Sprout.Graphics.Vulkan;
 using StbImageSharp;
 
 namespace Sprout.Graphics;
@@ -80,6 +81,14 @@ public abstract class GraphicsDevice : IDisposable
     /// <returns>The created <see cref="GraphicsDevice"/>.</returns>]
     public static GraphicsDevice Create(IntPtr sdlWindow, Backend backend = Backend.Unknown)
     {
-        return new GLGraphicsDevice(sdlWindow);
+        if (backend == Backend.Unknown)
+            backend = Backend.OpenGL;
+        
+        return backend switch
+        {
+            Backend.Vulkan => new VkGraphicsDevice(sdlWindow),
+            Backend.OpenGL => new GLGraphicsDevice(sdlWindow),
+            _ => throw new ArgumentOutOfRangeException(nameof(backend), backend, null)
+        };
     }
 }

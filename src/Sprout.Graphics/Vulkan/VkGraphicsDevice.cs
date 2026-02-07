@@ -10,6 +10,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     private readonly Instance _instance;
     private readonly PhysicalDevice _physicalDevice;
     private readonly VkHelper.Queues _queues;
+    private readonly Device _device;
     
     public override Backend Backend => Backend.Vulkan;
 
@@ -17,7 +18,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     {
         _vk = Vk.GetApi();
         _instance = VkHelper.CreateInstance(_vk, AppDomain.CurrentDomain.FriendlyName);
-        _physicalDevice = VkHelper.PickPhysicalDevice(_vk, _instance, sdlWindow, out _queues);
+        _physicalDevice = VkHelper.PickPhysicalDevice(_vk, _instance, out _queues);
+        _device = VkHelper.CreateDevice(_vk, _physicalDevice, ref _queues);
     }
     
     public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
@@ -51,6 +53,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
             return;
         IsDisposed = true;
         
+        _vk.DestroyDevice(_device, null);
         _vk.DestroyInstance(_instance, null);
         _vk.Dispose();
     }

@@ -1,6 +1,7 @@
 using SDL3;
 using Silk.NET.Core;
 using Silk.NET.Vulkan;
+using Silk.NET.Vulkan.Extensions.KHR;
 
 namespace Sprout.Graphics.Vulkan;
 
@@ -55,8 +56,10 @@ internal static unsafe class VkHelper
         return instance;
     }
 
-    public static PhysicalDevice PickPhysicalDevice(Vk vk, Instance instance, IntPtr sdlWindow, out Queues queues)
+    public static PhysicalDevice PickPhysicalDevice(Vk vk, Instance instance, out Queues queues)
     {
+        queues = new Queues();
+        
         uint numPhysicalDevices;
         vk.EnumeratePhysicalDevices(instance, &numPhysicalDevices, null);
         PhysicalDevice* devices = stackalloc PhysicalDevice[(int) numPhysicalDevices];
@@ -109,11 +112,65 @@ internal static unsafe class VkHelper
         throw new NotSupportedException("No supported physical devices. Use a different backend.");
     }
 
+    public static Device CreateDevice(Vk vk, PhysicalDevice physicalDevice, ref Queues queues)
+    {
+        using VkStringArray extensions = new(KhrSwapchain.ExtensionName);
+        
+        HashSet<uint> uniqueQueues = queues.UniqueFamilies;
+        int numUniqueQueues = uniqueQueues.Count;
+        DeviceQueueCreateInfo* queueInfos = stackalloc DeviceQueueCreateInfo[numUniqueQueues];
+
+        int i = 0;
+        float priority = 1.0f;
+        foreach (uint queue in uniqueQueues)
+        {
+            queueInfos[i++] = new DeviceQueueCreateInfo
+            {
+                SType = StructureType.DeviceQueueCreateInfo,
+                QueueFamilyIndex = queue,
+                QueueCount = 1,
+                PQueuePriorities = &priority
+            };
+        }
+
+        PhysicalDeviceFeatures features = new();
+
+        DeviceCreateInfo deviceInfo = new()
+        {
+            SType = StructureType.DeviceCreateInfo,
+
+            EnabledExtensionCount = extensions.Length,
+            PpEnabledExtensionNames = extensions,
+
+            QueueCreateInfoCount = (uint) numUniqueQueues,
+            PQueueCreateInfos = queueInfos,
+
+            PEnabledFeatures = &features
+        };
+
+        PhysicalDeviceDynamicRenderingFeatures dynamicRendering = new()
+        {
+            SType = StructureType.PhysicalDeviceDynamicRenderingFeatures,
+            DynamicRendering = true
+        };
+        deviceInfo.PNext = &dynamicRendering;
+
+        Device device;
+        vk.CreateDevice(physicalDevice, &deviceInfo, null, &device).Check("Create device");
+
+        vk.GetDeviceQueue(device, queues.GraphicsFamily, 0, out queues.Graphics);
+        vk.GetDeviceQueue(device, queues.PresentFamily, 0, out queues.Present);
+
+        return device;
+    }
+
     public struct Queues
     {
         public uint GraphicsFamily;
+        public Queue Graphics;
 
         public uint PresentFamily;
+        public Queue Present;
 
         public HashSet<uint> UniqueFamilies => [GraphicsFamily, PresentFamily];
     }

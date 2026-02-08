@@ -71,7 +71,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     
     public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
     {
-        throw new NotImplementedException();
+        return new VkShader(_vk, _device, in attachments);
     }
     
     protected override unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, void* data)

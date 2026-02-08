@@ -3,6 +3,7 @@ using Silk.NET.Core;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using Image = Silk.NET.Vulkan.Image;
+using Semaphore = Silk.NET.Vulkan.Semaphore;
 
 namespace Sprout.Graphics.Vulkan;
 
@@ -267,6 +268,112 @@ internal static unsafe class VkHelper
         vk.CreateImageView(device, &imageViewInfo, null, &view).Check("Create image view");
 
         return view;
+    }
+
+    public static CommandPool CreateCommandPool(Vk vk, Device device, ref readonly Queues queues)
+    {
+        CommandPoolCreateInfo commandPoolInfo = new()
+        {
+            SType = StructureType.CommandPoolCreateInfo,
+            Flags = CommandPoolCreateFlags.ResetCommandBufferBit,
+            QueueFamilyIndex = queues.GraphicsFamily
+        };
+
+        CommandPool commandPool;
+        vk.CreateCommandPool(device, &commandPoolInfo, null, &commandPool).Check("Create command pool");
+
+        return commandPool;
+    }
+
+    public static CommandBuffer[] CreateCommandBuffers(Vk vk, Device device, CommandPool pool, uint numBuffers)
+    {
+        CommandBufferAllocateInfo allocInfo = new()
+        {
+            SType = StructureType.CommandBufferAllocateInfo,
+            CommandPool = pool,
+            CommandBufferCount = numBuffers,
+            Level = CommandBufferLevel.Primary
+        };
+
+        CommandBuffer[] buffers = new CommandBuffer[numBuffers];
+        fixed (CommandBuffer* pBuffers = buffers)
+            vk.AllocateCommandBuffers(device, &allocInfo, buffers).Check("Allocate command buffers");
+
+        return buffers;
+    }
+
+    public static Fence CreateFence(Vk vk, Device device)
+    {
+        FenceCreateInfo fenceInfo = new()
+        {
+            SType = StructureType.FenceCreateInfo
+        };
+
+        Fence fence;
+        vk.CreateFence(device, &fenceInfo, null, &fence).Check("Create fence");
+
+        return fence;
+    }
+
+    public static bool NextFrame(KhrSwapchain khrSwapchain, SwapchainKHR swapchain, Device device, Fence fence, out uint imageIndex)
+    {
+        // TODO: Handle swapchain recreation
+        imageIndex = 0;
+        khrSwapchain.AcquireNextImage(device, swapchain, ulong.MaxValue, new Semaphore(), fence, ref imageIndex)
+            .Check("Acquire next image");
+
+        return true;
+    }
+
+    public static void BeginCommandBuffer(Vk vk, CommandBuffer cb)
+    {
+        CommandBufferBeginInfo beginInfo = new()
+        {
+            SType = StructureType.CommandBufferBeginInfo,
+            Flags = CommandBufferUsageFlags.OneTimeSubmitBit
+        };
+        
+        vk.BeginCommandBuffer(cb, &beginInfo).Check("Begin command buffer");
+    }
+
+    public static void ExecuteCommandBuffer(Vk vk, CommandBuffer cb, ref readonly Queues queues)
+    {
+        vk.EndCommandBuffer(cb).Check("End command buffer");
+
+        SubmitInfo submitInfo = new()
+        {
+            SType = StructureType.SubmitInfo,
+
+            CommandBufferCount = 1,
+            PCommandBuffers = &cb
+        };
+
+        vk.QueueSubmit(queues.Graphics, 1, &submitInfo, new Fence()).Check("Submit queue");
+        vk.QueueWaitIdle(queues.Graphics).Check("Wait for queue idle");
+    }
+
+    public static void TransitionImage(Vk vk, CommandBuffer cb, Image image, ImageLayout old, ImageLayout @new)
+    {
+        ImageMemoryBarrier imageBarrier = new()
+        {
+            SType = StructureType.ImageMemoryBarrier,
+            Image = image,
+            OldLayout = old,
+            NewLayout = @new,
+            SrcAccessMask = AccessFlags.ColorAttachmentReadBit,
+            DstAccessMask = AccessFlags.ColorAttachmentReadBit,
+            SubresourceRange = new ImageSubresourceRange
+            {
+                AspectMask = ImageAspectFlags.ColorBit,
+                BaseArrayLayer = 0,
+                LayerCount = 1,
+                BaseMipLevel = 0,
+                LevelCount = 1
+            }
+        };
+
+        vk.CmdPipelineBarrier(cb, PipelineStageFlags.ColorAttachmentOutputBit,
+            PipelineStageFlags.ColorAttachmentOutputBit, 0, 0, null, 0, null, 1, &imageBarrier);
     }
 
     public struct Queues

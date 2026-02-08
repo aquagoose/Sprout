@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using SDL3;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
@@ -20,10 +21,16 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     private readonly PhysicalDevice _physicalDevice;
     private readonly VkHelper.Queues _queues;
     private readonly Device _device;
+    private readonly CommandPool _commandPool;
 
     private SwapchainKHR _swapchain;
     private Image[] _swapchainImages;
     private ImageView[] _swapchainImageViews;
+    private uint _currentImage;
+
+    private uint _currentFrameInFlight;
+    private Fence _fence;
+    private readonly CommandBuffer[] _commandBuffers;
     
     public override Backend Backend => Backend.Vulkan;
 
@@ -41,6 +48,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         
         _physicalDevice = VkHelper.PickPhysicalDevice(_vk, _instance, out _queues);
         _device = VkHelper.CreateDevice(_vk, _physicalDevice, ref _queues);
+        _commandPool = VkHelper.CreateCommandPool(_vk, _device, in _queues);
         
         if (!_vk.TryGetDeviceExtension(_instance, _device, out _khrSwapchain))
             throw new Exception("Failed to get KhrSwapchain extension!");
@@ -52,6 +60,9 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         _swapchainImageViews = new ImageView[_swapchainImages.Length];
         for (int i = 0; i < _swapchainImages.Length; i++)
             _swapchainImageViews[i] = VkHelper.CreateImageView(_vk, _device, _swapchainImages[i], format);
+
+        _fence = VkHelper.CreateFence(_vk, _device);
+        _commandBuffers = VkHelper.CreateCommandBuffers(_vk, _device, _commandPool, FramesInFlight);
     }
     
     public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
@@ -71,12 +82,34 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     
     public override void Clear(float r, float g, float b, float a = 1)
     {
-        throw new NotImplementedException();
+        VkHelper.NextFrame(_khrSwapchain, _swapchain, _device, _fence, out _currentImage);
+        _vk.WaitForFences(_device, 1, in _fence, false, ulong.MaxValue).Check("Wait for fence");
+        _currentFrameInFlight++;
+        if (_currentFrameInFlight >= FramesInFlight)
+            _currentFrameInFlight = 0;
+
+        CommandBuffer cb = _commandBuffers[_currentFrameInFlight];
+        Image image = _swapchainImages[_currentImage];
+        VkHelper.BeginCommandBuffer(_vk, cb);
+        VkHelper.TransitionImage(_vk, cb, image, ImageLayout.Undefined, ImageLayout.ColorAttachmentOptimal);
     }
     
     public override void Present()
     {
-        throw new NotImplementedException();
+        CommandBuffer cb = _commandBuffers[_currentFrameInFlight];
+        Image image = _swapchainImages[_currentImage];
+        VkHelper.TransitionImage(_vk, cb, image, ImageLayout.ColorAttachmentOptimal, ImageLayout.PresentSrcKhr);
+        VkHelper.ExecuteCommandBuffer(_vk, cb, in _queues);
+
+        PresentInfoKHR presentInfo = new()
+        {
+            SType = StructureType.PresentInfoKhr,
+            SwapchainCount = 1,
+            PImageIndices = (uint*) Unsafe.AsPointer(ref _currentImage),
+            PSwapchains = (SwapchainKHR*) Unsafe.AsPointer(ref _swapchain)
+        };
+        _khrSwapchain.QueuePresent(_queues.Present, &presentInfo).Check("Present");
+        _vk.QueueWaitIdle(_queues.Present).Check("Wait for idle");
     }
     
     public override void Dispose()
@@ -85,10 +118,12 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
             return;
         IsDisposed = true;
         
+        _vk.DestroyFence(_device, _fence, null);
         foreach (ImageView view in _swapchainImageViews)
             _vk.DestroyImageView(_device, view, null);
         _khrSwapchain.DestroySwapchain(_device, _swapchain, null);
         _khrSwapchain.Dispose();
+        _vk.DestroyCommandPool(_device, _commandPool, null);
         _vk.DestroyDevice(_device, null);
         SDL.VulkanDestroySurface(_instance.Handle, (nint) _surface.Handle, IntPtr.Zero);
         _khrSurface.Dispose();

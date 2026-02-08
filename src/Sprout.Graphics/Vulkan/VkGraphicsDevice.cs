@@ -3,6 +3,7 @@ using SDL3;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using Image = Silk.NET.Vulkan.Image;
+using Semaphore = Silk.NET.Vulkan.Semaphore;
 
 namespace Sprout.Graphics.Vulkan;
 
@@ -32,6 +33,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     private uint _currentFrameInFlight;
     private Fence _fence;
     private readonly CommandBuffer[] _commandBuffers;
+    private readonly Semaphore[] _queueSubmitSemaphores;
     
     public override Backend Backend => Backend.Vulkan;
 
@@ -64,6 +66,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
 
         _fence = VkHelper.CreateFence(_vk, _device);
         _commandBuffers = VkHelper.CreateCommandBuffers(_vk, _device, _commandPool, FramesInFlight);
+        _queueSubmitSemaphores = VkHelper.CreateSemaphores(_vk, _device, FramesInFlight);
     }
     
     public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
@@ -85,6 +88,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     {
         VkHelper.NextFrame(_khrSwapchain, _swapchain, _device, _fence, out _currentImage);
         _vk.WaitForFences(_device, 1, in _fence, false, ulong.MaxValue).Check("Wait for fence");
+        _vk.ResetFences(_device, 1, in _fence);
         _currentFrameInFlight++;
         if (_currentFrameInFlight >= FramesInFlight)
             _currentFrameInFlight = 0;
@@ -101,22 +105,24 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     public override void Present()
     {
         CommandBuffer cb = _commandBuffers[_currentFrameInFlight];
+        Semaphore semaphore = _queueSubmitSemaphores[_currentFrameInFlight];
         Image image = _swapchainImages[_currentImage];
         
         VkHelper.EndRendering(_vk, cb);
         
         VkHelper.TransitionImage(_vk, cb, image, ImageLayout.ColorAttachmentOptimal, ImageLayout.PresentSrcKhr);
-        VkHelper.ExecuteCommandBuffer(_vk, cb, in _queues);
+        VkHelper.ExecuteCommandBuffer(_vk, cb, in _queues, null, semaphore);
 
         PresentInfoKHR presentInfo = new()
         {
             SType = StructureType.PresentInfoKhr,
             SwapchainCount = 1,
             PImageIndices = (uint*) Unsafe.AsPointer(ref _currentImage),
-            PSwapchains = (SwapchainKHR*) Unsafe.AsPointer(ref _swapchain)
+            PSwapchains = (SwapchainKHR*) Unsafe.AsPointer(ref _swapchain),
+            WaitSemaphoreCount = 1,
+            PWaitSemaphores = &semaphore
         };
         _khrSwapchain.QueuePresent(_queues.Present, &presentInfo).Check("Present");
-        _vk.QueueWaitIdle(_queues.Present).Check("Wait for idle");
     }
     
     public override void Dispose()

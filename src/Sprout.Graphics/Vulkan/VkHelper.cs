@@ -302,6 +302,21 @@ internal static unsafe class VkHelper
         return buffers;
     }
 
+    public static Semaphore[] CreateSemaphores(Vk vk, Device device, uint numSemaphores)
+    {
+        SemaphoreCreateInfo semaphoreInfo = new()
+        {
+            SType = StructureType.SemaphoreCreateInfo
+        };
+
+        Semaphore[] semaphores = new Semaphore[numSemaphores];
+
+        for (uint i = 0; i < numSemaphores; i++)
+            vk.CreateSemaphore(device, &semaphoreInfo, null, out semaphores[i]);
+
+        return semaphores;
+    }
+
     public static Fence CreateFence(Vk vk, Device device)
     {
         FenceCreateInfo fenceInfo = new()
@@ -336,7 +351,7 @@ internal static unsafe class VkHelper
         vk.BeginCommandBuffer(cb, &beginInfo).Check("Begin command buffer");
     }
 
-    public static void ExecuteCommandBuffer(Vk vk, CommandBuffer cb, ref readonly Queues queues)
+    public static void ExecuteCommandBuffer(Vk vk, CommandBuffer cb, ref readonly Queues queues, Semaphore? wait, Semaphore? signal)
     {
         vk.EndCommandBuffer(cb).Check("End command buffer");
 
@@ -345,11 +360,23 @@ internal static unsafe class VkHelper
             SType = StructureType.SubmitInfo,
 
             CommandBufferCount = 1,
-            PCommandBuffers = &cb
+            PCommandBuffers = &cb,
         };
 
+        if (wait is Semaphore waitSemaphore)
+        {
+            submitInfo.WaitSemaphoreCount = 1;
+            // We can do this because waitSemaphore isn't just limited to this scope and therefore remains valid.
+            submitInfo.PWaitSemaphores = &waitSemaphore;
+        }
+
+        if (signal is Semaphore signalSemaphore)
+        {
+            submitInfo.SignalSemaphoreCount = 1;
+            submitInfo.PSignalSemaphores = &signalSemaphore;
+        }
+
         vk.QueueSubmit(queues.Graphics, 1, &submitInfo, new Fence()).Check("Submit queue");
-        vk.QueueWaitIdle(queues.Graphics).Check("Wait for queue idle");
     }
 
     public static void BeginRendering(Vk vk, CommandBuffer cb, ReadOnlySpan<ImageView> colorAttachments, ClearColorValue? clearColor, Extent2D renderSize)

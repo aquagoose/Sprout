@@ -334,8 +334,18 @@ internal static unsafe class VkHelper
     {
         // TODO: Handle swapchain recreation
         imageIndex = 0;
-        khrSwapchain.AcquireNextImage(device, swapchain, ulong.MaxValue, new Semaphore(), fence, ref imageIndex)
-            .Check("Acquire next image");
+        Result result =
+            khrSwapchain.AcquireNextImage(device, swapchain, ulong.MaxValue, new Semaphore(), fence, ref imageIndex);
+
+        switch (result)
+        {
+            case Result.ErrorOutOfDateKhr:
+            case Result.SuboptimalKhr:
+                return false;
+            default:
+                result.Check("Acquire next image");
+                break;
+        }
 
         return true;
     }

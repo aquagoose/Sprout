@@ -26,6 +26,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     private SwapchainKHR _swapchain;
     private Image[] _swapchainImages;
     private ImageView[] _swapchainImageViews;
+    private Extent2D _swapchainSize;
     private uint _currentImage;
 
     private uint _currentFrameInFlight;
@@ -54,7 +55,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
             throw new Exception("Failed to get KhrSwapchain extension!");
 
         _swapchain = VkHelper.CreateSwapchain(_khrSwapchain, _physicalDevice, _device, in _queues, _surface,
-            _khrSurface, sdlWindow, new SwapchainKHR(), out Format format);
+            _khrSurface, sdlWindow, new SwapchainKHR(), out Format format, out _swapchainSize);
         _swapchainImages = VkHelper.GetSwapchainImages(_device, _khrSwapchain, _swapchain);
 
         _swapchainImageViews = new ImageView[_swapchainImages.Length];
@@ -92,12 +93,18 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         Image image = _swapchainImages[_currentImage];
         VkHelper.BeginCommandBuffer(_vk, cb);
         VkHelper.TransitionImage(_vk, cb, image, ImageLayout.Undefined, ImageLayout.ColorAttachmentOptimal);
+
+        VkHelper.BeginRendering(_vk, cb, [_swapchainImageViews[_currentImage]], new ClearColorValue(r, g, b, a),
+            _swapchainSize);
     }
     
     public override void Present()
     {
         CommandBuffer cb = _commandBuffers[_currentFrameInFlight];
         Image image = _swapchainImages[_currentImage];
+        
+        VkHelper.EndRendering(_vk, cb);
+        
         VkHelper.TransitionImage(_vk, cb, image, ImageLayout.ColorAttachmentOptimal, ImageLayout.PresentSrcKhr);
         VkHelper.ExecuteCommandBuffer(_vk, cb, in _queues);
 

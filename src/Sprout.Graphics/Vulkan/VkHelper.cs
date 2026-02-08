@@ -171,18 +171,18 @@ internal static unsafe class VkHelper
     // Got it? Great!
     public static SwapchainKHR CreateSwapchain(KhrSwapchain khrSwapchain, PhysicalDevice physicalDevice, Device device,
         ref readonly Queues queues, SurfaceKHR surface, KhrSurface khrSurface, IntPtr sdlWindow,
-        SwapchainKHR oldSwapchain, out Format format)
+        SwapchainKHR oldSwapchain, out Format format, out Extent2D size)
     {
         SurfaceCapabilitiesKHR capabilities;
         khrSurface.GetPhysicalDeviceSurfaceCapabilities(physicalDevice, surface, &capabilities);
 
-        Extent2D extent = capabilities.CurrentExtent;
-        if (extent.Width == uint.MaxValue || extent.Height == uint.MaxValue)
+        size = capabilities.CurrentExtent;
+        if (size.Width == uint.MaxValue || size.Height == uint.MaxValue)
         {
             int w, h;
             SDL.GetWindowSizeInPixels(sdlWindow, out w, out h);
-            extent.Width = (uint) w;
-            extent.Height = (uint) h;
+            size.Width = (uint) w;
+            size.Height = (uint) h;
         }
         // Gonna skip the extra size checking here, I'm hoping it won't be necessary.
 
@@ -202,7 +202,7 @@ internal static unsafe class VkHelper
             OldSwapchain = oldSwapchain,
             
             MinImageCount = numImages,
-            ImageExtent = extent,
+            ImageExtent = size,
             ImageFormat = format,
             ImageColorSpace = colorSpace,
             ImageArrayLayers = 1,
@@ -350,6 +350,39 @@ internal static unsafe class VkHelper
 
         vk.QueueSubmit(queues.Graphics, 1, &submitInfo, new Fence()).Check("Submit queue");
         vk.QueueWaitIdle(queues.Graphics).Check("Wait for queue idle");
+    }
+
+    public static void BeginRendering(Vk vk, CommandBuffer cb, ReadOnlySpan<ImageView> colorAttachments, ClearColorValue? clearColor, Extent2D renderSize)
+    {
+        RenderingAttachmentInfo* colorRenderAttachments = stackalloc RenderingAttachmentInfo[colorAttachments.Length];
+        for (int i = 0; i < colorAttachments.Length; i++)
+        {
+            colorRenderAttachments[i] = new RenderingAttachmentInfo
+            {
+                SType = StructureType.RenderingAttachmentInfo,
+                ClearValue = new ClearValue(clearColor),
+                ImageLayout = ImageLayout.ColorAttachmentOptimal,
+                ImageView = colorAttachments[i],
+                LoadOp = clearColor == null ? AttachmentLoadOp.Load : AttachmentLoadOp.Clear,
+                StoreOp = AttachmentStoreOp.Store
+            };
+        }
+
+        RenderingInfo renderingInfo = new()
+        {
+            SType = StructureType.RenderingInfo,
+            ColorAttachmentCount = (uint) colorAttachments.Length,
+            PColorAttachments = colorRenderAttachments,
+            RenderArea = new Rect2D(extent: renderSize),
+            LayerCount = 1
+        };
+
+        vk.CmdBeginRendering(cb, &renderingInfo);
+    }
+
+    public static void EndRendering(Vk vk, CommandBuffer cb)
+    {
+        vk.CmdEndRendering(cb);
     }
 
     public static void TransitionImage(Vk vk, CommandBuffer cb, Image image, ImageLayout old, ImageLayout @new)

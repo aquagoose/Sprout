@@ -2,6 +2,8 @@ using System.Runtime.CompilerServices;
 using SDL3;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
+using Sprout.Graphics.Vulkan.VMA;
+using static Sprout.Graphics.Vulkan.VMA.Vma;
 using Image = Silk.NET.Vulkan.Image;
 using Semaphore = Silk.NET.Vulkan.Semaphore;
 
@@ -23,6 +25,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     private readonly PhysicalDevice _physicalDevice;
     private readonly VkHelper.Queues _queues;
     private readonly CommandPool _commandPool;
+    private readonly Allocator* _allocator;
 
     private SwapchainKHR _swapchain;
     private Image[] _swapchainImages;
@@ -59,6 +62,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         _physicalDevice = VkHelper.PickPhysicalDevice(_vk, _instance, out _queues);
         Device = VkHelper.CreateDevice(_vk, _physicalDevice, ref _queues);
         _commandPool = VkHelper.CreateCommandPool(_vk, Device, in _queues);
+        _allocator = VkHelper.CreateAllocator(_instance, _physicalDevice, Device, GetInstanceProcAddress,
+            GetDeviceProcAddress);
         
         if (!_vk.TryGetDeviceExtension(_instance, Device, out _khrSwapchain))
             throw new Exception("Failed to get KhrSwapchain extension!");
@@ -163,6 +168,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
             _vk.DestroyImageView(Device, view, null);
         _khrSwapchain.DestroySwapchain(Device, _swapchain, null);
         _khrSwapchain.Dispose();
+        vmaDestroyAllocator(_allocator);
         _vk.DestroyCommandPool(Device, _commandPool, null);
         _vk.DestroyDevice(Device, null);
         SDL.VulkanDestroySurface(_instance.Handle, (nint) _surface.Handle, IntPtr.Zero);
@@ -185,5 +191,15 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         _swapchainImageViews = new ImageView[_swapchainImages.Length];
         for (int i = 0; i < _swapchainImageViews.Length; i++)
             _swapchainImageViews[i] = VkHelper.CreateImageView(_vk, Device, _swapchainImages[i], format);
+    }
+
+    private nint GetInstanceProcAddress(Instance instance, byte* name)
+    {
+        return _vk.GetInstanceProcAddr(instance, name);
+    }
+
+    private nint GetDeviceProcAddress(Device device, byte* name)
+    {
+        return _vk.GetDeviceProcAddr(device, name);
     }
 }

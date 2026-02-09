@@ -1,0 +1,18 @@
+using Silk.NET.Vulkan;
+
+namespace Sprout.Graphics.Vulkan.VMA;
+
+public unsafe partial struct VmaVirtualAllocationCreateInfo
+{
+    [NativeTypeName("VkDeviceSize")]
+    public nuint size;
+
+    [NativeTypeName("VkDeviceSize")]
+    public nuint alignment;
+
+    [NativeTypeName("VmaVirtualAllocationCreateFlags")]
+    public uint flags;
+
+    [NativeTypeName("void * _Nullable")]
+    public void* pUserData;
+}

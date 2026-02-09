@@ -1,0 +1,18 @@
+using Silk.NET.Vulkan;
+
+namespace Sprout.Graphics.Vulkan.VMA;
+
+public partial struct VmaDefragmentationStats
+{
+    [NativeTypeName("VkDeviceSize")]
+    public nuint bytesMoved;
+
+    [NativeTypeName("VkDeviceSize")]
+    public nuint bytesFreed;
+
+    [NativeTypeName("uint32_t")]
+    public uint allocationsMoved;
+
+    [NativeTypeName("uint32_t")]
+    public uint deviceMemoryBlocksFreed;
+}

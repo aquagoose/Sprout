@@ -1,7 +1,10 @@
 using SDL3;
 using Silk.NET.Core;
+using Silk.NET.Core.Native;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
+using Sprout.Graphics.Vulkan.VMA;
+using static Sprout.Graphics.Vulkan.VMA.Vma;
 using Image = Silk.NET.Vulkan.Image;
 using Semaphore = Silk.NET.Vulkan.Semaphore;
 
@@ -226,6 +229,33 @@ internal static unsafe class VkHelper
         khrSwapchain.CreateSwapchain(device, &swapchainInfo, null, &swapchain).Check("Create swapchain");
 
         return swapchain;
+    }
+
+    public static Allocator* CreateAllocator(Instance instance, PhysicalDevice physicalDevice, Device device, GetInstanceProcAddressFunc getInstanceProcAddressFunc, GetDeviceProcAddressFunc getDeviceProcAddressFunc)
+    {
+        VmaVulkanFunctions functions = new()
+        {
+            vkGetInstanceProcAddr =
+                (delegate* unmanaged[Cdecl]<Instance, sbyte*, delegate* unmanaged[Cdecl]<void>>) SilkMarshal
+                    .DelegateToPtr(getInstanceProcAddressFunc),
+            vkGetDeviceProcAddr =
+                (delegate* unmanaged[Cdecl]<Device, sbyte*, delegate* unmanaged[Cdecl]<void>>)
+                SilkMarshal.DelegateToPtr(getDeviceProcAddressFunc)
+        };
+
+        AllocatorCreateInfo allocatorInfo = new()
+        {
+            instance = instance,
+            physicalDevice = physicalDevice,
+            device = device,
+            pVulkanFunctions = &functions,
+            vulkanApiVersion = ApiVersion
+        };
+
+        Allocator* allocator;
+        vmaCreateAllocator(&allocatorInfo, &allocator).Check("Create allocator");
+
+        return allocator;
     }
 
     public static Image[] GetSwapchainImages(Device device, KhrSwapchain khrSwapchain, SwapchainKHR swapchain)
@@ -456,4 +486,8 @@ internal static unsafe class VkHelper
 
         public HashSet<uint> UniqueFamilies => [GraphicsFamily, PresentFamily];
     }
+
+    public delegate nint GetInstanceProcAddressFunc(Instance instance, byte* name);
+
+    public delegate nint GetDeviceProcAddressFunc(Device device, byte* name);
 }

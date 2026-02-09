@@ -13,4 +13,10 @@
       <PackageReference Include="StbImageSharp" Version="2.30.15" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="libVulkanMemoryAllocator.so">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

@@ -25,6 +25,8 @@ internal sealed unsafe class GLRenderable : Renderable
 
         _vao = _gl.GenVertexArray();
         _gl.BindVertexArray(_vao);
+
+        BufferUsageARB usage = info.Dynamic ? BufferUsageARB.DynamicDraw : BufferUsageARB.StaticDraw;
         
         if (info.NumVertices > 0)
         {
@@ -32,7 +34,7 @@ internal sealed unsafe class GLRenderable : Renderable
             uint sizeInBytes = info.NumVertices * info.VertexSize;
             _vbo = _gl.GenBuffer();
             _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo);
-            _gl.BufferData(BufferTargetARB.ArrayBuffer, sizeInBytes, null, BufferUsageARB.StaticDraw);
+            _gl.BufferData(BufferTargetARB.ArrayBuffer, sizeInBytes, null, usage);
 
             _numDraws = info.NumVertices;
         }
@@ -43,7 +45,7 @@ internal sealed unsafe class GLRenderable : Renderable
             uint sizeInBytes = info.NumIndices * sizeof(uint);
             _ebo = _gl.GenBuffer();
             _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
-            _gl.BufferData(BufferTargetARB.ElementArrayBuffer, sizeInBytes, null, BufferUsageARB.StaticDraw);
+            _gl.BufferData(BufferTargetARB.ElementArrayBuffer, sizeInBytes, null, usage);
 
             _numDraws = info.NumIndices;
         }

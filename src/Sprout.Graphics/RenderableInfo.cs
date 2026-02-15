@@ -36,4 +36,10 @@ public struct RenderableInfo
     /// The uniforms in the shader that will be used here.
     /// </summary>
     public Uniform[]? Uniforms;
+
+    /// <summary>
+    /// If the renderable is dynamic or not. A dynamic renderable will be updated very frequently, even multiple times
+    /// per frame.
+    /// </summary>
+    public bool Dynamic;
 }

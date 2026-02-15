@@ -19,4 +19,8 @@
       </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <EmbeddedResource Include="Shaders/*.pcsh" />
+    </ItemGroup>
+
 </Project>

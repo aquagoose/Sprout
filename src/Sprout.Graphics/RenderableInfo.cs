@@ -31,4 +31,9 @@ public struct RenderableInfo
     /// The <see cref="Sprout.Graphics.Shader"/> to use.
     /// </summary>
     public Shader Shader;
+
+    /// <summary>
+    /// The uniforms in the shader that will be used here.
+    /// </summary>
+    public Uniform[]? Uniforms;
 }

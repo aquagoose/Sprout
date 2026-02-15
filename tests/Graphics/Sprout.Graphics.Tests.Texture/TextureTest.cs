@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Numerics;
 using Sprout.Graphics.ShaderUtils;
 using Sprout.Graphics.Tests.Base;
 using STexture = Sprout.Graphics.Texture;
@@ -10,6 +11,8 @@ public class TextureTest() : TestBase("Texture Test")
     private STexture _texture;
     private Shader _shader;
     private Renderable _renderable;
+
+    private float _rotation;
 
     protected override void Load()
     {
@@ -46,6 +49,11 @@ public class TextureTest() : TestBase("Texture Test")
             [
                 new VertexAttribute(0, AttributeType.Float2, 0),
                 new VertexAttribute(1, AttributeType.Float2, 8)
+            ],
+            Uniforms =
+            [
+                Uniform.Texture(0),
+                Uniform.ConstantBuffer<Matrix4x4>(1)
             ]
         };
 
@@ -56,8 +64,13 @@ public class TextureTest() : TestBase("Texture Test")
 
     protected override void Loop(float dt)
     {
+        _rotation += dt;
+        if (_rotation >= float.Pi * 2)
+            _rotation -= float.Pi * 2;
+        
         Device.Clear(Color.CornflowerBlue);
         _renderable.PushTexture(0, _texture);
+        _renderable.PushUniformData(1, Matrix4x4.CreateRotationZ(_rotation));
         _renderable.Draw();
         Device.Present();
     }

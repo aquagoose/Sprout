@@ -14,6 +14,8 @@ internal sealed unsafe class GLRenderable : Renderable
     private readonly uint _vbo;
     private readonly uint _ebo;
 
+    private readonly Dictionary<uint, GLUniform>? _uniforms;
+
     private readonly uint _numDraws;
     
     public GLRenderable(GL gl, ref readonly RenderableInfo info)
@@ -78,6 +80,41 @@ internal sealed unsafe class GLRenderable : Renderable
                 }
             }
         }
+
+        if (info.Uniforms != null)
+        {
+            _uniforms = new Dictionary<uint, GLUniform>(info.Uniforms.Length);
+            for (int i = 0; i < info.Uniforms.Length; i++)
+            {
+                ref readonly Uniform uniform = ref info.Uniforms[i];
+
+                GLUniform glUniform;
+                switch (uniform.Type)
+                {
+                    case UniformType.ConstantBuffer:
+                    {
+                        uint buffer = _gl.GenBuffer();
+                        _gl.BindBuffer(BufferTargetARB.UniformBuffer, buffer);
+                        _gl.BufferData(BufferTargetARB.UniformBuffer, uniform.ConstantBufferSize, null,
+                            BufferUsageARB.DynamicDraw);
+
+                        glUniform = new GLUniform(UniformType.ConstantBuffer, uniform.ConstantBufferSize, buffer);
+                        break;
+                    }
+                    
+                    case UniformType.Texture:
+                    {
+                        glUniform = new GLUniform(UniformType.Texture, 0, 0);
+                        break;
+                    }
+                    
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+                
+                _uniforms.Add(uniform.Index, glUniform);
+            }
+        }
     }
 
     public override void UpdateVertices<T>(uint offset, ReadOnlySpan<T> vertices)
@@ -99,8 +136,26 @@ internal sealed unsafe class GLRenderable : Renderable
         }
     }
 
+    public override void PushUniformData(uint index, uint offset, uint sizeInBytes, void* pData)
+    {
+        if (!(_uniforms?.TryGetValue(index, out GLUniform uniform) ?? false))
+            throw new Exception("Invalid uniform index!");
+        
+        Debug.Assert(uniform.Type == UniformType.ConstantBuffer, "Uniform index is a Constant Buffer uniform");
+        Debug.Assert(offset + sizeInBytes >= uniform.UniformBufferSize);
+     
+        _gl.BindVertexArray(_vao);
+        _gl.BindBufferBase(BufferTargetARB.UniformBuffer, index, uniform.UniformBuffer);
+        _gl.BufferSubData(BufferTargetARB.UniformBuffer, (nint) offset, sizeInBytes, pData);
+    }
+
     public override void PushTexture(uint index, Texture texture)
     {
+        Debug.Assert((_uniforms?.TryGetValue(index, out GLUniform uniform) ?? false) && uniform.Type == UniformType.Texture,
+            "Texture index is not valid or is not a texture uniform");
+     
+        _gl.BindVertexArray(_vao);
+        
         GLTexture glTexture = (GLTexture) texture;
         _gl.ActiveTexture(TextureUnit.Texture0 + (int) index);
         _gl.BindTexture(TextureTarget.Texture2D, glTexture.Texture);
@@ -129,5 +184,21 @@ internal sealed unsafe class GLRenderable : Renderable
         _gl.DeleteBuffer(_ebo);
         _gl.DeleteBuffer(_vbo);
         _gl.DeleteVertexArray(_vao);
+    }
+
+    private readonly struct GLUniform
+    {
+        public readonly UniformType Type;
+
+        public readonly uint UniformBufferSize;
+        
+        public readonly uint UniformBuffer;
+
+        public GLUniform(UniformType type, uint uniformBufferSize, uint uniformBuffer)
+        {
+            Type = type;
+            UniformBufferSize = uniformBufferSize;
+            UniformBuffer = uniformBuffer;
+        }
     }
 }

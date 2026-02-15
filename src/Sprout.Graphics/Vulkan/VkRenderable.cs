@@ -149,7 +149,12 @@ internal sealed unsafe class VkRenderable : Renderable
     {
         throw new NotImplementedException();
     }
-    
+
+    public override void PushUniformData(uint index, uint offset, uint sizeInBytes, void* pData)
+    {
+        throw new NotImplementedException();
+    }
+
     public override void PushTexture(uint index, Texture texture)
     {
         throw new NotImplementedException();

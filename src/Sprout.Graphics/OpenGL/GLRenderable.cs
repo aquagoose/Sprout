@@ -100,6 +100,9 @@ internal sealed unsafe class GLRenderable : Renderable
                         _gl.BufferData(BufferTargetARB.UniformBuffer, uniform.ConstantBufferSize, null,
                             BufferUsageARB.DynamicDraw);
 
+                        uint index = _gl.GetUniformBlockIndex(_shader.Program, $"sp_Uniform_{uniform.Index}");
+                        _gl.UniformBlockBinding(_shader.Program, index, uniform.Index);
+
                         glUniform = new GLUniform(UniformType.ConstantBuffer, uniform.ConstantBufferSize, buffer);
                         break;
                     }

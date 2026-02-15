@@ -198,7 +198,17 @@ public static class Compiler
             
             for (uint i = 0; i < numResources; i++)
                 _spirv.CompilerSetName(compiler, reflectedResources[i].Id, $"sp_ToFrag_var{i}");
-            
+
+            _spirv.ResourcesGetResourceListForType(resources, ResourceType.UniformBuffer, &reflectedResources,
+                &numResources);
+
+            for (uint i = 0; i < numResources; i++)
+            {
+                uint binding = _spirv.CompilerGetDecoration(compiler, reflectedResources[i].Id, Decoration.Binding);
+                _spirv.CompilerUnsetDecoration(compiler, reflectedResources[i].Id, Decoration.Binding);
+                _spirv.CompilerSetName(compiler, reflectedResources[i].BaseTypeId, $"sp_Uniform_{binding}");
+            }
+
             CheckResult(_spirv.CompilerBuildCombinedImageSamplers(compiler), "Build combined image samplers");
             uint samplerId;
             CheckResult(_spirv.CompilerBuildDummySamplerForCombinedImages(compiler, &samplerId), "Build dummy sampler");

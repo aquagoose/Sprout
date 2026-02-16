@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace Sprout.Graphics;
 
 public class PreCompiledShader
@@ -75,6 +77,16 @@ public class PreCompiledShader
     public static PreCompiledShader FromFile(string path)
     {
         using FileStream stream = File.OpenRead(path);
+        return FromStream(stream);
+    }
+
+    public static PreCompiledShader FromEmbeddedResource(string resourceName, Assembly? assembly = null)
+    {
+        Assembly loadAssembly = assembly ?? Assembly.GetExecutingAssembly();
+        using Stream? stream = loadAssembly.GetManifestResourceStream(resourceName);
+        if (stream == null)
+            throw new Exception($"Failed to find embedded resource with name '{resourceName}' in assembly {assembly}");
+
         return FromStream(stream);
     }
 }

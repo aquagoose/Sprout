@@ -24,6 +24,12 @@ namespace Sprout::GL
         SDL_GL_DestroyContext(_context);
     }
 
+    void GLGraphicsDevice::Clear(const Color& color)
+    {
+        glClearColor(color.R, color.G, color.B, color.A);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+
     void GLGraphicsDevice::Present()
     {
         SDL_GL_SetSwapInterval(1);

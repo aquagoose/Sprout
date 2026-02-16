@@ -13,6 +13,8 @@ namespace Sprout::GL
         explicit GLGraphicsDevice(SDL_Window* window);
         ~GLGraphicsDevice() override;
 
+        void Clear(const Color& color) override;
+
         void Present() override;
     };
 }

@@ -24,6 +24,7 @@ int main(int argc, char* argv[])
             }
         }
 
+        device->Clear({ 1.0f, 0.5f, 0.25f });
         device->Present();
     }
 

@@ -1,8 +1,9 @@
 #pragma once
 
 #include <memory>
-
 #include <SDL3/SDL.h>
+
+#include "Color.h"
 
 namespace Sprout
 {
@@ -10,6 +11,8 @@ namespace Sprout
     {
     public:
         virtual ~GraphicsDevice() = default;
+
+        virtual void Clear(const Color& color) = 0;
 
         virtual void Present() = 0;
 

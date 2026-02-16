@@ -8,6 +8,7 @@ option(SPROUT_RENDERER_OPENGL "Enable the OpenGL renderer backend" ON)
 file(GLOB SPROUT_SRC CONFIGURE_DEPENDS
         include/Sprout/*.h
         src/*.cpp
+        include/Sprout/Math/*.h
         include/Sprout/Graphics/*.h
         src/Graphics/*.cpp
 )

@@ -3,13 +3,21 @@ project(Sprout)
 
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB SPROUT_SRC CONFIGURE_DEPENDS include/Sprout/*.h src/*.cpp)
+file(GLOB SPROUT_SRC CONFIGURE_DEPENDS
+        include/Sprout/*.h
+        src/*.cpp
+        include/Sprout/Graphics/*.h
+        src/Graphics/*.cpp
+)
 
 add_library(Sprout STATIC ${SPROUT_SRC})
 target_include_directories(Sprout PUBLIC include/)
 
 add_subdirectory(lib/SDL)
 target_link_libraries(Sprout PUBLIC SDL3::SDL3)
+
+add_subdirectory(lib/glad)
+target_link_libraries(Sprout PUBLIC glad)
 
 message(STATUS "Searching for tests.")
 file(GLOB TEST_SRC tests/*.cpp)

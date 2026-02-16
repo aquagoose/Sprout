@@ -42,9 +42,9 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         return new GLRenderable(_gl, in info);
     }
 
-    public override void Clear(float r, float g, float b, float a = 1)
+    public override void Clear(Color color)
     {
-        _gl.ClearColor(r, g, b, a);
+        _gl.ClearColor(color.R, color.G, color.B, color.A);
         _gl.Clear(ClearBufferMask.ColorBufferBit);
     }
 

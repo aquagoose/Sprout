@@ -61,11 +61,10 @@ public class SpriteRenderer : IDisposable
     public void Draw(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight,
         Color tint)
     {
-        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight,
-            new Vector4(tint.R / 255.0f, tint.G / 255.0f, tint.B / 255.0f, tint.A / 255.0f)));
+        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, tint));
     }
 
-    public void Draw(Texture texture, Vector2 position)
+    public void Draw(Texture texture, Vector2 position, Color? tint = null)
     {
         Size textureSize = texture.Size;
         
@@ -74,7 +73,7 @@ public class SpriteRenderer : IDisposable
         Vector2 bottomLeft = new Vector2(position.X, position.Y + textureSize.Height);
         Vector2 bottomRight = new Vector2(topRight.X, bottomLeft.Y);
         
-        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, new Vector4(1, 1, 1, 1)));
+        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, tint ?? Color.White));
     }
 
     /// <summary>
@@ -153,9 +152,9 @@ public class SpriteRenderer : IDisposable
         public readonly Vector2 TopRight;
         public readonly Vector2 BottomLeft;
         public readonly Vector2 BottomRight;
-        public readonly Vector4 Tint;
+        public readonly Color Tint;
 
-        public Sprite(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight, Vector4 tint)
+        public Sprite(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight, Color tint)
         {
             Texture = texture;
             TopLeft = topLeft;
@@ -173,9 +172,9 @@ public class SpriteRenderer : IDisposable
         
         public readonly Vector2 Position;
         public readonly Vector2 TexCoord;
-        public readonly Vector4 Tint;
+        public readonly Color Tint;
 
-        public Vertex(Vector2 position, Vector2 texCoord, Vector4 tint)
+        public Vertex(Vector2 position, Vector2 texCoord, Color tint)
         {
             Position = position;
             TexCoord = texCoord;

@@ -96,7 +96,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         return new VkRenderable(_vk, this, in info);
     }
     
-    public override void Clear(float r, float g, float b, float a = 1)
+    public override void Clear(Color color)
     {
         if (!VkHelper.NextFrame(_khrSwapchain, _swapchain, Device, _fence, out _currentImage))
             RecreateSwapchain();
@@ -112,7 +112,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         VkHelper.BeginCommandBuffer(_vk, cb);
         VkHelper.TransitionImage(_vk, cb, image, ImageLayout.Undefined, ImageLayout.ColorAttachmentOptimal);
 
-        VkHelper.BeginRendering(_vk, cb, [_swapchainImageViews[_currentImage]], new ClearColorValue(r, g, b, a),
+        VkHelper.BeginRendering(_vk, cb, [_swapchainImageViews[_currentImage]], new ClearColorValue(color.R, color.G, color.B, color.A),
             _swapchainSize);
 
         Viewport viewport = new Viewport(0, _swapchainSize.Height, _swapchainSize.Width, -_swapchainSize.Height, 0, 1);

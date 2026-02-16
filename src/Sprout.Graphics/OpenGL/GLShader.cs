@@ -36,8 +36,6 @@ internal sealed class GLShader : Shader
             fixed (byte* pSource = attachment.Source)
                 _gl.ShaderSource(shader, 1, &pSource, &sourceLength);
             
-            Console.WriteLine(Encoding.UTF8.GetString(attachment.Source));
-            
             _gl.CompileShader(shader);
 
             _gl.GetShader(shader, ShaderParameterName.CompileStatus, out int compileStatus);

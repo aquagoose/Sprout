@@ -24,6 +24,12 @@ internal sealed unsafe class GLTexture : Texture
         Texture = _gl.GenTexture();
         _gl.BindTexture(TextureTarget.Texture2D, Texture);
         _gl.TexImage2D(TextureTarget.Texture2D, 0, iFmt, width, height, 0, fmt, type, pData);
+
+        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
+            (int) TextureMinFilter.LinearMipmapLinear);
+        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int) TextureMagFilter.Linear);
+        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int) TextureWrapMode.Repeat);
+        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int) TextureWrapMode.Repeat);
         
         _gl.GenerateMipmap(TextureTarget.Texture2D);
     }

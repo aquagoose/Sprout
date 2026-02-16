@@ -18,5 +18,7 @@ namespace Sprout
     public:
         explicit Window(const WindowInfo& info);
         ~Window();
+
+        [[nodiscard]] SDL_Window* Handle() const noexcept { return _window; }
     };
 }

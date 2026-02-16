@@ -11,6 +11,8 @@ namespace Sprout
     public:
         virtual ~GraphicsDevice() = default;
 
+        virtual void Present() = 0;
+
         static std::unique_ptr<GraphicsDevice> Create(SDL_Window* window);
     };
 }

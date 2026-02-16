@@ -1,3 +1,5 @@
+using System.Drawing;
+
 namespace Sprout.Graphics;
 
 /// <summary>
@@ -5,6 +7,13 @@ namespace Sprout.Graphics;
 /// </summary>
 public abstract class Texture : IDisposable
 {
+    public readonly Size Size;
+
+    protected Texture(Size size)
+    {
+        Size = size;
+    }
+    
     /// <summary>
     /// Gets if this <see cref="Texture"/> has been disposed.
     /// </summary>

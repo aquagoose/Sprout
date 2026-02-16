@@ -1,3 +1,4 @@
+using System.Drawing;
 using Silk.NET.OpenGL;
 
 namespace Sprout.Graphics.OpenGL;
@@ -10,7 +11,7 @@ internal sealed unsafe class GLTexture : Texture
     
     public readonly uint Texture;
 
-    public GLTexture(GL gl, uint width, uint height, PixelFormat format, void* pData)
+    public GLTexture(GL gl, uint width, uint height, PixelFormat format, void* pData) : base(new Size((int) width, (int) height))
     {
         _gl = gl;
 

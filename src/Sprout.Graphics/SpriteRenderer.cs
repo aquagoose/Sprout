@@ -65,6 +65,18 @@ public class SpriteRenderer : IDisposable
             new Vector4(tint.R / 255.0f, tint.G / 255.0f, tint.B / 255.0f, tint.A / 255.0f)));
     }
 
+    public void Draw(Texture texture, Vector2 position)
+    {
+        Size textureSize = texture.Size;
+        
+        Vector2 topLeft = position;
+        Vector2 topRight = new Vector2(position.X + textureSize.Width, position.Y);
+        Vector2 bottomLeft = new Vector2(position.X, position.Y + textureSize.Height);
+        Vector2 bottomRight = new Vector2(topRight.X, bottomLeft.Y);
+        
+        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, new Vector4(1, 1, 1, 1)));
+    }
+
     /// <summary>
     /// Clear the draw list. Use this to "cancel", if you will not be calling <see cref="Render"/>.
     /// </summary> 

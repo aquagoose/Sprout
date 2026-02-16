@@ -19,7 +19,9 @@ public sealed class SpriteRendererTest() : TestBase("Sprite Renderer Test")
     {
         Device.Clear(Color.CornflowerBlue);
         
-        _renderer.Draw(_texture, new Vector2(0, 0), new Vector2(256, 0), new Vector2(0, 256), new Vector2(256, 256), Color.White);
+        _renderer.Draw(_texture, new Vector2(0));
+        _renderer.Draw(_texture, new Vector2(50));
+        _renderer.Draw(_texture, new Vector2(100));
         _renderer.Render();
         
         Device.Present();

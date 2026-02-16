@@ -25,7 +25,6 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     private readonly PhysicalDevice _physicalDevice;
     private readonly VkHelper.Queues _queues;
     private readonly CommandPool _commandPool;
-    private readonly Allocator* _allocator;
 
     private SwapchainKHR _swapchain;
     private Image[] _swapchainImages;
@@ -34,11 +33,12 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     private uint _currentImage;
 
     private uint _currentFrameInFlight;
-    private Fence _fence;
+    private readonly Fence _fence;
     private readonly CommandBuffer[] _commandBuffers;
     private readonly Semaphore[] _queueSubmitSemaphores;
     
     public readonly Device Device;
+    public readonly Allocator* Allocator;
 
     public CommandBuffer CommandBuffer => _commandBuffers[_currentFrameInFlight];
 
@@ -62,7 +62,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         _physicalDevice = VkHelper.PickPhysicalDevice(_vk, _instance, out _queues);
         Device = VkHelper.CreateDevice(_vk, _physicalDevice, ref _queues);
         _commandPool = VkHelper.CreateCommandPool(_vk, Device, in _queues);
-        _allocator = VkHelper.CreateAllocator(_instance, _physicalDevice, Device, GetInstanceProcAddress,
+        Allocator = VkHelper.CreateAllocator(_instance, _physicalDevice, Device, GetInstanceProcAddress,
             GetDeviceProcAddress);
         
         if (!_vk.TryGetDeviceExtension(_instance, Device, out _khrSwapchain))
@@ -168,7 +168,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
             _vk.DestroyImageView(Device, view, null);
         _khrSwapchain.DestroySwapchain(Device, _swapchain, null);
         _khrSwapchain.Dispose();
-        vmaDestroyAllocator(_allocator);
+        vmaDestroyAllocator(Allocator);
         _vk.DestroyCommandPool(Device, _commandPool, null);
         _vk.DestroyDevice(Device, null);
         SDL.VulkanDestroySurface(_instance.Handle, (nint) _surface.Handle, IntPtr.Zero);

@@ -4,7 +4,10 @@ using Silk.NET.Core.Native;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using Sprout.Graphics.Vulkan.VMA;
+using static Sprout.Graphics.Vulkan.VMA.AllocationCreateFlags;
 using static Sprout.Graphics.Vulkan.VMA.Vma;
+using static Sprout.Graphics.Vulkan.VMA.VmaMemoryUsage;
+using Buffer = Silk.NET.Vulkan.Buffer;
 using Image = Silk.NET.Vulkan.Image;
 using Semaphore = Silk.NET.Vulkan.Semaphore;
 
@@ -358,6 +361,28 @@ internal static unsafe class VkHelper
         vk.CreateFence(device, &fenceInfo, null, &fence).Check("Create fence");
 
         return fence;
+    }
+
+    public static VkBuffer CreateBuffer(Allocator* allocator, BufferUsageFlags usage, uint size)
+    {
+        BufferCreateInfo bufferInfo = new()
+        {
+            SType = StructureType.BufferCreateInfo,
+            Usage = usage,
+            Size = size
+        };
+
+        AllocationCreateInfo allocationInfo = new()
+        {
+            usage = VMA_MEMORY_USAGE_AUTO,
+            flags = (uint) VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+        };
+
+        Buffer buffer;
+        Allocation* allocation;
+        vmaCreateBuffer(allocator, &bufferInfo, &allocationInfo, &buffer, &allocation, null).Check("Create buffer");
+
+        return new VkBuffer(buffer, allocation);
     }
 
     public static bool NextFrame(KhrSwapchain khrSwapchain, SwapchainKHR swapchain, Device device, Fence fence, out uint imageIndex)

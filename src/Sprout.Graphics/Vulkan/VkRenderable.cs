@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Silk.NET.Vulkan;
+using static Sprout.Graphics.Vulkan.VMA.Vma;
 
 namespace Sprout.Graphics.Vulkan;
 
@@ -12,6 +14,9 @@ internal sealed unsafe class VkRenderable : Renderable
 
     private readonly PipelineLayout _layout;
     private readonly Pipeline _pipeline;
+
+    private readonly VkBuffer _vertexBuffer;
+    private readonly VkBuffer _indexBuffer;
 
     public VkRenderable(Vk vk, VkGraphicsDevice device, ref readonly RenderableInfo info)
     {
@@ -138,6 +143,22 @@ internal sealed unsafe class VkRenderable : Renderable
 
         _vk.CreateGraphicsPipelines(_device.Device, new PipelineCache(), 1, &pipelineInfo, null, out _pipeline)
             .Check("Create pipeline");
+
+        if (info.NumVertices > 0)
+        {
+            Debug.Assert(info.VertexSize > 0);
+            
+            _vertexBuffer = VkHelper.CreateBuffer(_device.Allocator,
+                BufferUsageFlags.VertexBufferBit | BufferUsageFlags.TransferDstBit, info.NumVertices * info.VertexSize);
+        }
+
+        if (info.NumIndices > 0)
+        {
+            Debug.Assert(info.NumVertices > 0);
+
+            _indexBuffer = VkHelper.CreateBuffer(_device.Allocator,
+                BufferUsageFlags.IndexBufferBit | BufferUsageFlags.TransferDstBit, info.NumIndices * sizeof(uint));
+        }
     }
     
     public override void UpdateVertices<T>(uint offset, ReadOnlySpan<T> vertices)
@@ -178,6 +199,12 @@ internal sealed unsafe class VkRenderable : Renderable
         if (IsDisposed)
             return;
         IsDisposed = true;
+        
+        if (_vertexBuffer.Buffer.Handle != 0)
+            vmaDestroyBuffer(_device.Allocator, _vertexBuffer.Buffer, _vertexBuffer.Allocation);
+
+        if (_indexBuffer.Buffer.Handle != 0)
+            vmaDestroyBuffer(_device.Allocator, _indexBuffer.Buffer, _indexBuffer.Allocation);
         
         _vk.DestroyPipeline(_device.Device, _pipeline, null);
         _vk.DestroyPipelineLayout(_device.Device, _layout, null);

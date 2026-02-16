@@ -58,13 +58,15 @@ public class SpriteRenderer : IDisposable
         _drawList = [];
     }
 
-    public void Draw(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight, Rectangle? source = null, Color? tint = null)
+    public void Draw(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight,
+        Rectangle? source = null, Color? tint = null, SpriteFlip flip = SpriteFlip.None)
     {
         Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
-        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White));
+        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
     }
 
-    public void Draw(Texture texture, Vector2 position, Rectangle? source = null, Color? tint = null)
+    public void Draw(Texture texture, Vector2 position, Rectangle? source = null, Color? tint = null,
+        SpriteFlip flip = SpriteFlip.None)
     {
         Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
         
@@ -73,10 +75,11 @@ public class SpriteRenderer : IDisposable
         Vector2 bottomLeft = new Vector2(position.X, position.Y + src.Height);
         Vector2 bottomRight = new Vector2(topRight.X, bottomLeft.Y);
         
-        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White));
+        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
     }
 
-    public void Draw(Texture texture, Vector2 position, Size size, Rectangle? source = null, Color? tint = null)
+    public void Draw(Texture texture, Vector2 position, Size size, Rectangle? source = null, Color? tint = null,
+        SpriteFlip flip = SpriteFlip.None)
     {
         Vector2 topLeft = position;
         Vector2 topRight = new Vector2(position.X + size.Width, position.Y);
@@ -84,10 +87,11 @@ public class SpriteRenderer : IDisposable
         Vector2 bottomRight = new Vector2(position.X + size.Width, position.Y + size.Height);
         
         Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
-        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White));
+        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
     }
 
-    public void Draw(Texture texture, Matrix3x2 transform, Rectangle? source = null, Color? tint = null)
+    public void Draw(Texture texture, Matrix3x2 transform, Rectangle? source = null, Color? tint = null,
+        SpriteFlip flip = SpriteFlip.None)
     {
         Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
 
@@ -96,18 +100,18 @@ public class SpriteRenderer : IDisposable
         Vector2 bottomLeft = Vector2.Transform(new Vector2(0, src.Height), transform);
         Vector2 bottomRight = Vector2.Transform(new Vector2(src.Width, src.Height), transform);
         
-        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White));
+        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
     }
 
     public void Draw(Texture texture, Vector2 position, float rotation, Vector2 scale, Vector2 origin,
-        Rectangle? source = null, Color? tint = null)
+        Rectangle? source = null, Color? tint = null, SpriteFlip flip = SpriteFlip.None)
     {
         Matrix3x2 matrix = Matrix3x2.CreateTranslation(-origin) *
                            Matrix3x2.CreateScale(scale) *
                            Matrix3x2.CreateRotation(rotation) *
                            Matrix3x2.CreateTranslation(position);
         
-        Draw(texture, matrix, source, tint);
+        Draw(texture, matrix, source, tint, flip);
     }
 
     /// <summary>
@@ -145,10 +149,57 @@ public class SpriteRenderer : IDisposable
             float texW = (float) textureSize.Width;
             float texH = (float) textureSize.Height;
 
+            // Convert source coords (0-TextureSizeInPixels) into texture coords (0-1).
             float x = sprite.Source.X / texW;
             float y = sprite.Source.Y / texH;
             float w = sprite.Source.Width / texW;
             float h = sprite.Source.Height / texH;
+
+            // To flip, we must invert the coordinates "in-place", to ensure that, if a source rectangle is used, only
+            // the visible sprite flips, and not the *entire* sprite sheet.
+            // To do this, first calculate the source rectangle as normal (as above), then:
+            //     - Set the X/Y coordinate to the Right/Bottom coordinate of the rectangle
+            //     - Invert the Width/Height.
+            // We do this because we are always adding the X&Width/Y&Height values together, so we must flip the values
+            // to flip the sprite, without affecting its source rectangle.
+            switch (sprite.Flip)
+            {
+                case SpriteFlip.None:
+                    break;
+
+                case SpriteFlip.FlipX:
+                {
+                    float xPlusW = x + w;
+                    x = xPlusW;
+                    w = -w;
+                    break;
+                }
+
+                case SpriteFlip.FlipY:
+                {
+                    float yPlusH = y + h;
+                    y = yPlusH;
+                    h = -h;
+                    
+                    break;
+                }
+
+                case SpriteFlip.FlipXY:
+                {
+                    float xPlusW = x + w;
+                    x = xPlusW;
+                    w = -w;
+                    
+                    float yPlusH = y + h;
+                    y = yPlusH;
+                    h = -h;
+                    
+                    break;
+                }
+                
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
 
             _vertices[vOffset + 0] = new Vertex(sprite.TopLeft, new Vector2(x, y), sprite.Tint);
             _vertices[vOffset + 1] = new Vertex(sprite.TopRight, new Vector2(x + w, y), sprite.Tint);
@@ -198,9 +249,10 @@ public class SpriteRenderer : IDisposable
         public readonly Vector2 BottomRight;
         public readonly Rectangle Source;
         public readonly Color Tint;
+        public readonly SpriteFlip Flip;
 
         public Sprite(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight,
-            Rectangle source, Color tint)
+            Rectangle source, Color tint, SpriteFlip flip)
         {
             Texture = texture;
             TopLeft = topLeft;
@@ -209,6 +261,7 @@ public class SpriteRenderer : IDisposable
             BottomRight = bottomRight;
             Source = source;
             Tint = tint;
+            Flip = flip;
         }
     }
 

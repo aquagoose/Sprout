@@ -3,7 +3,7 @@ project(Sprout)
 
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB SPROUT_SRC CONFIGURE_DEPENDS include/*.h)
+file(GLOB SPROUT_SRC CONFIGURE_DEPENDS include/Sprout/*.h src/*.cpp)
 
 add_library(Sprout STATIC ${SPROUT_SRC})
 target_include_directories(Sprout PUBLIC include/)

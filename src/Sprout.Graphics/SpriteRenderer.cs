@@ -58,22 +58,56 @@ public class SpriteRenderer : IDisposable
         _drawList = [];
     }
 
-    public void Draw(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight,
-        Color tint)
+    public void Draw(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight, Rectangle? source = null, Color? tint = null)
     {
-        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, tint));
+        Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
+        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White));
     }
 
-    public void Draw(Texture texture, Vector2 position, Color? tint = null)
+    public void Draw(Texture texture, Vector2 position, Rectangle? source = null, Color? tint = null)
     {
-        Size textureSize = texture.Size;
+        Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
         
         Vector2 topLeft = position;
-        Vector2 topRight = new Vector2(position.X + textureSize.Width, position.Y);
-        Vector2 bottomLeft = new Vector2(position.X, position.Y + textureSize.Height);
+        Vector2 topRight = new Vector2(position.X + src.Width, position.Y);
+        Vector2 bottomLeft = new Vector2(position.X, position.Y + src.Height);
         Vector2 bottomRight = new Vector2(topRight.X, bottomLeft.Y);
         
-        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, tint ?? Color.White));
+        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White));
+    }
+
+    public void Draw(Texture texture, Vector2 position, Size size, Rectangle? source = null, Color? tint = null)
+    {
+        Vector2 topLeft = position;
+        Vector2 topRight = new Vector2(position.X + size.Width, position.Y);
+        Vector2 bottomLeft = new Vector2(position.X, position.Y + size.Height);
+        Vector2 bottomRight = new Vector2(position.X + size.Width, position.Y + size.Height);
+        
+        Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
+        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White));
+    }
+
+    public void Draw(Texture texture, Matrix3x2 transform, Rectangle? source = null, Color? tint = null)
+    {
+        Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
+
+        Vector2 topLeft = Vector2.Transform(new Vector2(0, 0), transform);
+        Vector2 topRight = Vector2.Transform(new Vector2(src.Width, 0), transform);
+        Vector2 bottomLeft = Vector2.Transform(new Vector2(0, src.Height), transform);
+        Vector2 bottomRight = Vector2.Transform(new Vector2(src.Width, src.Height), transform);
+        
+        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White));
+    }
+
+    public void Draw(Texture texture, Vector2 position, float rotation, Vector2 scale, Vector2 origin,
+        Rectangle? source = null, Color? tint = null)
+    {
+        Matrix3x2 matrix = Matrix3x2.CreateTranslation(-origin) *
+                           Matrix3x2.CreateScale(scale) *
+                           Matrix3x2.CreateRotation(rotation) *
+                           Matrix3x2.CreateTranslation(position);
+        
+        Draw(texture, matrix, source, tint);
     }
 
     /// <summary>
@@ -84,10 +118,11 @@ public class SpriteRenderer : IDisposable
         _drawList.Clear();
     }
 
-    public void Render()
+    public void Render(Matrix4x4? transform = null, Matrix4x4? projection = null)
     {
-        TransformMatrices matrices =
-            new TransformMatrices(Matrix4x4.CreateOrthographicOffCenter(0, 800, 600, 0, -1, 1), Matrix4x4.Identity);
+        TransformMatrices matrices = new TransformMatrices(
+            projection ?? Matrix4x4.CreateOrthographicOffCenter(0, 800, 600, 0, -1, 1),
+            transform ?? Matrix4x4.Identity);
         
         _renderable.PushUniformData(0, matrices);
         
@@ -106,10 +141,19 @@ public class SpriteRenderer : IDisposable
             uint vOffset = currentDraw * NumVertices;
             uint iOffset = currentDraw * NumIndices;
 
-            _vertices[vOffset + 0] = new Vertex(sprite.TopLeft, new Vector2(0, 0), sprite.Tint);
-            _vertices[vOffset + 1] = new Vertex(sprite.TopRight, new Vector2(1, 0), sprite.Tint);
-            _vertices[vOffset + 2] = new Vertex(sprite.BottomRight, new Vector2(1, 1), sprite.Tint);
-            _vertices[vOffset + 3] = new Vertex(sprite.BottomLeft, new Vector2(0, 1), sprite.Tint);
+            Size textureSize = currentTexture.Size;
+            float texW = (float) textureSize.Width;
+            float texH = (float) textureSize.Height;
+
+            float x = sprite.Source.X / texW;
+            float y = sprite.Source.Y / texH;
+            float w = sprite.Source.Width / texW;
+            float h = sprite.Source.Height / texH;
+
+            _vertices[vOffset + 0] = new Vertex(sprite.TopLeft, new Vector2(x, y), sprite.Tint);
+            _vertices[vOffset + 1] = new Vertex(sprite.TopRight, new Vector2(x + w, y), sprite.Tint);
+            _vertices[vOffset + 2] = new Vertex(sprite.BottomRight, new Vector2(x + w, y + h), sprite.Tint);
+            _vertices[vOffset + 3] = new Vertex(sprite.BottomLeft, new Vector2(x, y + h), sprite.Tint);
 
             _indices[iOffset + 0] = 0 + vOffset;
             _indices[iOffset + 1] = 1 + vOffset;
@@ -152,15 +196,18 @@ public class SpriteRenderer : IDisposable
         public readonly Vector2 TopRight;
         public readonly Vector2 BottomLeft;
         public readonly Vector2 BottomRight;
+        public readonly Rectangle Source;
         public readonly Color Tint;
 
-        public Sprite(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight, Color tint)
+        public Sprite(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight,
+            Rectangle source, Color tint)
         {
             Texture = texture;
             TopLeft = topLeft;
             TopRight = topRight;
             BottomLeft = bottomLeft;
             BottomRight = bottomRight;
+            Source = source;
             Tint = tint;
         }
     }
@@ -182,7 +229,7 @@ public class SpriteRenderer : IDisposable
         }
     }
 
-    public readonly struct TransformMatrices
+    private readonly struct TransformMatrices
     {
         // sizeof(Matrix4x4) = 64, * 2 = 128
         public const uint SizeInBytes = 128;

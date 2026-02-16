@@ -27,7 +27,7 @@ public class PCSHTest() : TestBase("PCSH Test")
 
     protected override void Loop(float dt)
     {
-        Device.Clear(1.0f, 0.5f, 0.25f);
+        Device.Clear(new Color(1.0f, 0.5f, 0.25f));
         _renderable.Draw(3);
         Device.Present();
     }

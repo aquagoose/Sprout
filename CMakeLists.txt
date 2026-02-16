@@ -3,12 +3,20 @@ project(Sprout)
 
 set(CMAKE_CXX_STANDARD 17)
 
+option(SPROUT_RENDERER_OPENGL "Enable the OpenGL renderer backend" ON)
+
 file(GLOB SPROUT_SRC CONFIGURE_DEPENDS
         include/Sprout/*.h
         src/*.cpp
         include/Sprout/Graphics/*.h
         src/Graphics/*.cpp
 )
+
+if (SPROUT_RENDERER_OPENGL)
+    file(GLOB SPROUT_OPENGL_SRC CONFIGURE_DEPENDS src/Graphics/GL/*.h src/Graphics/GL/*.cpp)
+    list(APPEND SPROUT_SRC ${SPROUT_OPENGL_SRC})
+    add_compile_definitions(SPROUT_RENDERER_OPENGL)
+endif ()
 
 add_library(Sprout STATIC ${SPROUT_SRC})
 target_include_directories(Sprout PUBLIC include/)

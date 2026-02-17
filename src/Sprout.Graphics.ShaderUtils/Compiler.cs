@@ -5,6 +5,7 @@ using Silk.NET.SPIRV;
 using Silk.NET.SPIRV.Cross;
 using TerraFX.Interop.DirectX;
 using TerraFX.Interop.Windows;
+using static TerraFX.Interop.DirectX.D3D;
 using static TerraFX.Interop.DirectX.DirectX;
 using static TerraFX.Interop.Windows.CLSID;
 using static TerraFX.Interop.Windows.Windows;
@@ -129,6 +130,39 @@ public static class Compiler
             if (utils != null)
                 utils->Release();
         }
+    }
+
+    public static unsafe byte[] HlslToDXBC(ShaderStage stage, string hlsl, string entryPoint, string? includeDirectory)
+    {
+        string target = stage switch
+        {
+            ShaderStage.Vertex => "vs_5_0",
+            ShaderStage.Pixel => "ps_5_0",
+            _ => throw new ArgumentOutOfRangeException(nameof(stage), stage, null)
+        };
+        
+        nint pHlsl = Marshal.StringToHGlobalAnsi(hlsl);
+        nint pEntryPoint = Marshal.StringToHGlobalAnsi(entryPoint);
+        nint pTarget = Marshal.StringToHGlobalAnsi(target);
+        
+        // TODO: Include directory
+
+        ID3DBlob* blob;
+        ID3DBlob* errorBlob;
+        if (D3DCompile((void*) pHlsl, (nuint) hlsl.Length, null, null, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                (sbyte*) pEntryPoint, (sbyte*) pTarget, 0, 0, &blob, &errorBlob).FAILED)
+        {
+            throw new Exception($"Failed to compile shader: {new string((sbyte*) errorBlob->GetBufferPointer())}");
+        }
+
+        if (errorBlob != null)
+            errorBlob->Release();
+
+        byte[] bytes = new byte[errorBlob->GetBufferSize()];
+        fixed (byte* pBytes = bytes)
+            Unsafe.CopyBlock(pBytes, blob->GetBufferPointer(), (uint) errorBlob->GetBufferSize());
+
+        return bytes;
     }
 
     public static unsafe byte[] SpirvToGLSL(ShaderStage stage, byte[] spirv, string entryPoint)

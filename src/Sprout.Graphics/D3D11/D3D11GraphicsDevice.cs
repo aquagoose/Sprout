@@ -91,7 +91,7 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
     
     public override Renderable CreateRenderable(in RenderableInfo info)
     {
-        throw new NotImplementedException();
+        return new D3D11Renderable(_device, _context, in info);
     }
     
     public override void Clear(Color color)
@@ -99,6 +99,17 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         ID3D11RenderTargetView* target = _swapchainTarget;
         _context->OMSetRenderTargets(1, &target, null);
         _context->ClearRenderTargetView(target, &color.R);
+
+        D3D11_VIEWPORT viewport = new D3D11_VIEWPORT
+        {
+            TopLeftX = 0,
+            TopLeftY = 0,
+            Width = 800,
+            Height = 600,
+            MinDepth = 0,
+            MaxDepth = 1
+        };
+        _context->RSSetViewports(1, &viewport);
     }
     
     public override void Present()

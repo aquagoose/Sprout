@@ -81,7 +81,7 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
     
     public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
     {
-        throw new NotImplementedException();
+        return new D3D11Shader(_device, attachments);
     }
     
     protected override unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, void* data)

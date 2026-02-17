@@ -32,6 +32,7 @@ public static class Compiler
         {
             Backend.Vulkan => HlslToSpirv(stage, hlsl, entryPoint, includeDirectory),
             Backend.OpenGL => SpirvToGLSL(stage, spirv, entryPoint),
+            Backend.D3D11 => HlslToDXBC(stage, hlsl, entryPoint, includeDirectory),
             _ => throw new ArgumentOutOfRangeException(nameof(backend), backend, null)
         };
     }
@@ -158,9 +159,9 @@ public static class Compiler
         if (errorBlob != null)
             errorBlob->Release();
 
-        byte[] bytes = new byte[errorBlob->GetBufferSize()];
+        byte[] bytes = new byte[blob->GetBufferSize()];
         fixed (byte* pBytes = bytes)
-            Unsafe.CopyBlock(pBytes, blob->GetBufferPointer(), (uint) errorBlob->GetBufferSize());
+            Unsafe.CopyBlock(pBytes, blob->GetBufferPointer(), (uint) blob->GetBufferSize());
 
         return bytes;
     }

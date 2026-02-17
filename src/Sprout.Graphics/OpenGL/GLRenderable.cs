@@ -146,7 +146,7 @@ internal sealed unsafe class GLRenderable : Renderable
         if (!(_uniforms?.TryGetValue(index, out GLUniform uniform) ?? false))
             throw new Exception("Invalid uniform index!");
         
-        Debug.Assert(uniform.Type == UniformType.ConstantBuffer, "Uniform index is a Constant Buffer uniform");
+        Debug.Assert(uniform.Type == UniformType.ConstantBuffer, "Uniform index is not a Constant Buffer uniform");
         Debug.Assert(offset + sizeInBytes >= uniform.UniformBufferSize);
      
         _gl.BindVertexArray(_vao);

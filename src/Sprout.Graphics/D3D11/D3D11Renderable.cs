@@ -28,6 +28,7 @@ internal sealed unsafe class D3D11Renderable : Renderable
     private readonly uint _stride;
 
     private readonly uint _numElements;
+    private readonly Dictionary<uint, DXUniform>? _uniforms;
 
     public D3D11Renderable(ID3D11Device* device, ID3D11DeviceContext* context, ref readonly RenderableInfo info)
     {
@@ -109,6 +110,45 @@ internal sealed unsafe class D3D11Renderable : Renderable
                     (nuint) _shader.VertexShaderSource.Length, inputLayout).Check("Create input layout");
             }
         }
+
+        if (info.Uniforms != null)
+        {
+            _uniforms = new Dictionary<uint, DXUniform>(info.Uniforms.Length);
+            for (int i = 0; i < info.Uniforms.Length; i++)
+            {
+                ref readonly Uniform uniform = ref info.Uniforms[i];
+
+                DXUniform dxUniform;
+                switch (uniform.Type)
+                {
+                    case UniformType.ConstantBuffer:
+                    {
+                        D3D11_BUFFER_DESC cbufferDesc = new()
+                        {
+                            BindFlags = (uint) D3D11_BIND_CONSTANT_BUFFER,
+                            ByteWidth = uniform.ConstantBufferSize,
+                            Usage = D3D11_USAGE_DYNAMIC,
+                            CPUAccessFlags = (uint) D3D11_CPU_ACCESS_WRITE
+                        };
+
+                        ID3D11Buffer* cbuffer;
+                        device->CreateBuffer(&cbufferDesc, null, &cbuffer).Check("Create constant buffer");
+
+                        dxUniform = new DXUniform(UniformType.ConstantBuffer, uniform.ConstantBufferSize, cbuffer);
+                        break;
+                    }
+                    
+                    case UniformType.Texture:
+                        dxUniform = new DXUniform(UniformType.Texture, 0, null);
+                        break;
+                    
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+                
+                _uniforms.Add(uniform.Index, dxUniform);
+            }
+        }
     }
     
     public override void UpdateVertices<T>(uint offset, ReadOnlySpan<T> vertices)
@@ -123,12 +163,32 @@ internal sealed unsafe class D3D11Renderable : Renderable
     
     public override unsafe void PushUniformData(uint index, uint offset, uint sizeInBytes, void* pData)
     {
-        throw new NotImplementedException();
+        if (!(_uniforms?.TryGetValue(index, out DXUniform uniform) ?? false))
+            throw new Exception("Invalid uniform index!");
+        
+        Debug.Assert(uniform.Type == UniformType.ConstantBuffer, "Uniform index is not a Constant Buffer uniform");
+        Debug.Assert(offset + sizeInBytes >= uniform.ConstantBufferSize);
+
+        D3D11_MAPPED_SUBRESOURCE subresource;
+        _context->Map((ID3D11Resource*) uniform.ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource)
+            .Check("Map buffer");
+
+        Unsafe.CopyBlock(subresource.pData, pData, sizeInBytes);
+        
+        _context->Unmap((ID3D11Resource*) uniform.ConstantBuffer, 0);
+
+        ID3D11Buffer* cbuffer = uniform.ConstantBuffer;
+        _context->VSSetConstantBuffers(index, 1, &cbuffer);
     }
     
     public override void PushTexture(uint index, Texture texture)
     {
-        throw new NotImplementedException();
+        Debug.Assert((_uniforms?.TryGetValue(index, out DXUniform uniform) ?? false) && uniform.Type == UniformType.Texture,
+            "Texture index is not valid or is not a texture uniform");
+
+        D3D11Texture d3dTexture = (D3D11Texture) texture;
+        ID3D11ShaderResourceView* srv = d3dTexture.TextureSrv;
+        _context->PSSetShaderResources(index, 1, &srv);
     }
     
     public override void Draw()
@@ -204,6 +264,22 @@ internal sealed unsafe class D3D11Renderable : Renderable
             D3D11_BOX box = new D3D11_BOX((int) offset, 0, 0, (int) (offset + sizeInBytes), 1, 1);
             fixed (void* pData = data)
                 _context->UpdateSubresource((ID3D11Resource*) buffer, 0, &box, pData, 0, 0);
+        }
+    }
+
+    private readonly struct DXUniform
+    {
+        public readonly UniformType Type;
+
+        public readonly uint ConstantBufferSize;
+        
+        public readonly ID3D11Buffer* ConstantBuffer;
+
+        public DXUniform(UniformType type, uint constantBufferSize, ID3D11Buffer* constantBuffer)
+        {
+            Type = type;
+            ConstantBufferSize = constantBufferSize;
+            ConstantBuffer = constantBuffer;
         }
     }
 }

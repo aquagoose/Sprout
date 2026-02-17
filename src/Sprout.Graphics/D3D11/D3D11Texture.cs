@@ -59,7 +59,10 @@ internal sealed unsafe class D3D11Texture : Texture
         }
 
         if (pData != null)
+        {
             context->UpdateSubresource((ID3D11Resource*) Texture, 0, null, pData, 4 * width, 0);
+            context->GenerateMips(TextureSrv);
+        }
     }
     
     public override void Dispose()

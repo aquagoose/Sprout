@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using SDL3;
 
@@ -89,7 +90,8 @@ public abstract class TestBase(string testName) : IDisposable
         Device = GraphicsDevice.Create(_window, backend);
         
         Load();
-        
+
+        Stopwatch sw = Stopwatch.StartNew();
         _alive = true;
         while (_alive)
         {
@@ -103,8 +105,10 @@ public abstract class TestBase(string testName) : IDisposable
                         break;
                 }
             }
-            
-            Loop(1f / 60.0f);
+
+            float dt = (float) sw.Elapsed.TotalSeconds;
+            sw.Restart();
+            Loop(dt);
         }
     }
 

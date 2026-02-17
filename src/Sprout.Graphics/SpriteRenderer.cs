@@ -135,7 +135,7 @@ public class SpriteRenderer : IDisposable
 
         foreach (Sprite sprite in _drawList)
         {
-            if (sprite.Texture != currentTexture)
+            if (sprite.Texture != currentTexture || currentDraw >= MaxSpritesPerBatch)
             {
                 Flush(currentDraw, currentTexture!);
                 currentDraw = 0;

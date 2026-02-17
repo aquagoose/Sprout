@@ -26,6 +26,28 @@ public struct Color
         B = b * multiplier;
         A = a * multiplier;
     }
+
+    public static Color FromHSV(float h, float s, float v)
+    {
+        h = float.RadiansToDegrees(h);
+        h %= 360;
+        
+        float c = v * s;
+        float x = c * (1 - float.Abs((h / 60) % 2 - 1));
+        float m = v - c;
+
+        (float r, float g, float b) = h switch
+        {
+            >= 0 and < 60 => (c, x, 0.0f),
+            >= 60 and < 120 => (x, c, 0.0f),
+            >= 120 and < 180 => (0.0f, c, x),
+            >= 180 and < 240 => (0.0f, x, c),
+            >= 240 and < 300 => (x, 0.0f, c),
+            >= 300 and < 360 => (c, 0.0f, x)
+        };
+
+        return new Color(r + m, g + m, b + m);
+    }
     
     /// <summary>
     /// AliceBlue has an RGB value of 240, 248, 255 (0xF0F8FF)

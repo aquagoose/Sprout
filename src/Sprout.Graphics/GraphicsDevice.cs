@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using Sprout.Graphics.D3D11;
 using Sprout.Graphics.OpenGL;
 using Sprout.Graphics.Vulkan;
 using StbImageSharp;
@@ -68,16 +69,41 @@ public abstract class GraphicsDevice : IDisposable
     /// <param name="sdlWindow">The SDL3 window to create the device with.</param>
     /// <param name="backend">The <see cref="Sprout.Graphics.Backend"/> to use, if any. Pass
     /// <see cref="Backend.Unknown"/> to automatically pick the best backend.</param>
-    /// <returns>The created <see cref="GraphicsDevice"/>.</returns>]
+    /// <returns>The created <see cref="GraphicsDevice"/>.</returns>
     public static GraphicsDevice Create(IntPtr sdlWindow, Backend backend = Backend.Unknown)
     {
-        if (backend == Backend.Unknown)
-            backend = Backend.OpenGL;
+        if (backend != Backend.Unknown)
+            return CreateDeviceFromBackend(backend, sdlWindow);
         
+        List<Backend> backends = [];
+        if (OperatingSystem.IsWindows())
+            backends.Add(Backend.D3D11);
+        
+        // OpenGL is the "fallback" backend. If none others are available, OpenGL will be used.
+        backends.Add(Backend.OpenGL);
+
+        foreach (Backend tryBackend in backends)
+        {
+            try
+            {
+                return CreateDeviceFromBackend(tryBackend, sdlWindow);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+
+        throw new PlatformNotSupportedException("No available backends!");
+    }
+
+    private static GraphicsDevice CreateDeviceFromBackend(Backend backend, IntPtr sdlWindow)
+    {
         return backend switch
         {
             Backend.Vulkan => new VkGraphicsDevice(sdlWindow),
             Backend.OpenGL => new GLGraphicsDevice(sdlWindow),
+            Backend.D3D11 => new D3D11GraphicsDevice(sdlWindow),
             _ => throw new ArgumentOutOfRangeException(nameof(backend), backend, null)
         };
     }

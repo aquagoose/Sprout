@@ -23,12 +23,12 @@ public enum Backend
     /// <summary>
     /// Metal. Runs on Apple devices.
     /// </summary>
-    Metal = 3,
+    Metal = 3,*/
     
     /// <summary>
-    /// DirectX 11. Runs on Windows. Has more stable performance than <see cref="D3D12"/>.
+    /// DirectX 11. Runs on Windows.<!-- Has more stable performance than <see cref="D3D12"/>.-->
     /// </summary>
-    D3D11 = 4,*/
+    D3D11 = 4,
     
     /// <summary>
     /// OpenGL 3.3. Runs on all desktop platforms.

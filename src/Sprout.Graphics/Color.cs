@@ -29,21 +29,28 @@ public struct Color
 
     public static Color FromHSV(float h, float s, float v)
     {
-        h = float.RadiansToDegrees(h);
-        h %= 360;
+        const float degs0 = 0;
+        const float degs60 = float.Pi / 3;
+        const float degs120 = (2 * float.Pi) / 3;
+        const float degs180 = float.Pi;
+        const float degs240 = (4 * float.Pi) / 3;
+        const float degs300 = (5 * float.Pi) / 3;
+        const float degs360 = float.Pi * 2;
+        
+        h %= degs360;
         
         float c = v * s;
-        float x = c * (1 - float.Abs((h / 60) % 2 - 1));
+        float x = c * (1 - float.Abs((h / degs60) % 2 - 1));
         float m = v - c;
 
         (float r, float g, float b) = h switch
         {
-            >= 0 and < 60 => (c, x, 0.0f),
-            >= 60 and < 120 => (x, c, 0.0f),
-            >= 120 and < 180 => (0.0f, c, x),
-            >= 180 and < 240 => (0.0f, x, c),
-            >= 240 and < 300 => (x, 0.0f, c),
-            >= 300 and < 360 => (c, 0.0f, x)
+            >= degs0 and < degs60 => (c, x, 0.0f),
+            >= degs60 and < degs120 => (x, c, 0.0f),
+            >= degs120 and < degs180 => (0.0f, c, x),
+            >= degs180 and < degs240 => (0.0f, x, c),
+            >= degs240 and < degs300 => (x, 0.0f, c),
+            >= degs300 and < degs360 => (c, 0.0f, x)
         };
 
         return new Color(r + m, g + m, b + m);

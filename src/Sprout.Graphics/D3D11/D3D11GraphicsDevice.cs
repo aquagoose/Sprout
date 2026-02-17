@@ -86,7 +86,7 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
     
     protected override unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, void* data)
     {
-        throw new NotImplementedException();
+        return new D3D11Texture(_device, _context, width, height, format, data);
     }
     
     public override Renderable CreateRenderable(in RenderableInfo info)

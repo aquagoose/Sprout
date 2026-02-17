@@ -40,8 +40,8 @@ public class BuffersTest() : TestBase("Buffers Test")
             Shader = _shader,
             VertexInput =
             [
-                new VertexAttribute(0, AttributeType.Float2, 0),
-                new VertexAttribute(1, AttributeType.Float3, 8)
+                new VertexAttribute(0, Semantic.Position, 0, AttributeType.Float2, 0),
+                new VertexAttribute(1, Semantic.Color, 0, AttributeType.Float3, 8)
             ]
         };
         

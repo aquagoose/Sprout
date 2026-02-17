@@ -39,9 +39,9 @@ public class SpriteRenderer : IDisposable
             Shader = _shader,
             VertexInput =
             [
-                new VertexAttribute(0, AttributeType.Float2, 0), // Position
-                new VertexAttribute(1, AttributeType.Float2, 8), // TexCoord
-                new VertexAttribute(2, AttributeType.Float4, 16) // Tint
+                new VertexAttribute(0, Semantic.Position, 0, AttributeType.Float2, 0), // Position
+                new VertexAttribute(1, Semantic.TexCoord, 0, AttributeType.Float2, 8), // TexCoord
+                new VertexAttribute(2, Semantic.Color, 0, AttributeType.Float4, 16) // Tint
             ],
             Uniforms =
             [

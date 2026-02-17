@@ -11,4 +11,17 @@ internal static class D3D11Utils
         if (result.FAILED)
             throw new Exception($"D3D11 operation '{operation}' failed with HRESULT: 0x{result.Value:x8}");
     }
+
+    public static string SemanticToString(Semantic semantic)
+    {
+        return semantic switch
+        {
+            Semantic.TexCoord => "TEXCOORD",
+            Semantic.Position => "POSITION",
+            Semantic.Color => "COLOR",
+            Semantic.Tangent => "TANGENT",
+            Semantic.BiTangent => "BITANGENT",
+            _ => throw new ArgumentOutOfRangeException(nameof(semantic), semantic, null)
+        };
+    }
 }

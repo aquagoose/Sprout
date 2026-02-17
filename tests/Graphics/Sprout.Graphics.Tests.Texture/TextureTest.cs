@@ -47,8 +47,8 @@ public class TextureTest() : TestBase("Texture Test")
             Shader = _shader,
             VertexInput =
             [
-                new VertexAttribute(0, AttributeType.Float2, 0),
-                new VertexAttribute(1, AttributeType.Float2, 8)
+                new VertexAttribute(0, Semantic.Position, 0, AttributeType.Float2, 0),
+                new VertexAttribute(1, Semantic.TexCoord, 0, AttributeType.Float2, 8)
             ],
             Uniforms =
             [

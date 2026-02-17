@@ -11,6 +11,8 @@ internal sealed unsafe class D3D11Shader : Shader
     public readonly ID3D11VertexShader* VertexShader;
     public readonly ID3D11PixelShader* PixelShader;
 
+    public readonly byte[] VertexShaderSource;
+
     public D3D11Shader(ID3D11Device* device, ReadOnlySpan<ShaderAttachment> attachments)
     {
         for (int i = 0; i < attachments.Length; i++)
@@ -27,6 +29,8 @@ internal sealed unsafe class D3D11Shader : Shader
                         {
                             device->CreateVertexShader(pSource, sourceLength, null, vertexShader)
                                 .Check("Create vertex shader");
+
+                            VertexShaderSource = attachment.Source;
                         }
                         break;
                     case ShaderStage.Pixel:

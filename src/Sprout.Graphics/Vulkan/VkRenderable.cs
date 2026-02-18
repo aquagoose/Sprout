@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Silk.NET.Vulkan;
 using static Sprout.Graphics.Vulkan.VMA.Vma;
+using Buffer = Silk.NET.Vulkan.Buffer;
 
 namespace Sprout.Graphics.Vulkan;
 
@@ -18,6 +19,8 @@ internal sealed unsafe class VkRenderable : Renderable
     private readonly VkBuffer _vertexBuffer;
     private readonly VkBuffer _indexBuffer;
 
+    private readonly uint _numElements;
+    
     public VkRenderable(Vk vk, VkGraphicsDevice device, ref readonly RenderableInfo info)
     {
         _vk = vk;
@@ -40,6 +43,8 @@ internal sealed unsafe class VkRenderable : Renderable
                 InputRate = VertexInputRate.Vertex,
                 Stride = info.VertexSize
             };
+
+            _numElements = info.NumVertices;
         }
 
         if (info.NumIndices > 0)
@@ -49,6 +54,8 @@ internal sealed unsafe class VkRenderable : Renderable
             _indexBuffer = VkHelper.CreateBuffer(_device.Allocator,
                 BufferUsageFlags.IndexBufferBit | BufferUsageFlags.TransferDstBit, info.NumIndices * sizeof(uint),
                 false);
+
+            _numElements = info.NumIndices;
         }
         
         PipelineLayoutCreateInfo layoutInfo = new()
@@ -208,18 +215,14 @@ internal sealed unsafe class VkRenderable : Renderable
     
     public override void UpdateVertices<T>(uint offset, ReadOnlySpan<T> vertices)
     {
-        /*CommandBuffer cb = _device.BeginCommandBuffer();
         fixed (void* pVertices = vertices)
-            _device.CopyToBuffer(cb, _vertexBuffer, offset, (uint) (vertices.Length * sizeof(T)), pVertices);
-        _device.ExecuteCommandBuffer(cb);*/
+            _device.CopyToBuffer(_vertexBuffer, offset, (uint) (vertices.Length * sizeof(T)), pVertices);
     }
     
     public override void UpdateIndices(uint offset, ReadOnlySpan<uint> indices)
     {
-        /*CommandBuffer cb = _device.BeginCommandBuffer();
         fixed (void* pVertices = indices)
-            _device.CopyToBuffer(cb, _indexBuffer, offset, (uint) (indices.Length * sizeof(uint)), pVertices);
-        _device.ExecuteCommandBuffer(cb);*/
+            _device.CopyToBuffer(_indexBuffer, offset, (uint) (indices.Length * sizeof(uint)), pVertices);
     }
 
     public override void PushUniformData(uint index, uint offset, uint sizeInBytes, void* pData)
@@ -234,7 +237,7 @@ internal sealed unsafe class VkRenderable : Renderable
     
     public override void Draw()
     {
-        throw new NotImplementedException();
+        Draw(_numElements);
     }
     
     public override void Draw(uint numElements)
@@ -242,7 +245,21 @@ internal sealed unsafe class VkRenderable : Renderable
         CommandBuffer cb = _device.CurrentCommandBuffer;
         
         _vk.CmdBindPipeline(cb, PipelineBindPoint.Graphics, _pipeline);
-        _vk.CmdDraw(cb, numElements, 1, 0, 0);
+
+        if (_vertexBuffer.Buffer.Handle != 0)
+        {
+            Buffer buffer = _vertexBuffer.Buffer;
+            ulong offset = 0;
+            _vk.CmdBindVertexBuffers(cb, 0, 1, &buffer, &offset);
+        }
+
+        if (_vertexBuffer.Buffer.Handle != 0)
+        {
+            _vk.CmdBindIndexBuffer(cb, _indexBuffer.Buffer, 0, IndexType.Uint32);
+            _vk.CmdDrawIndexed(cb, numElements, 1, 0, 0, 0);
+        }
+        else
+            _vk.CmdDraw(cb, numElements, 1, 0, 0);
     }
     
     public override void Dispose()

@@ -40,6 +40,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     private readonly Fence _fence;
 
     private readonly VkBuffer _transferBuffer;
+    private ulong _bufferOffset;
     
     public readonly Device Device;
     public readonly Allocator* Allocator;
@@ -87,6 +88,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         _fence = VkHelper.CreateFence(_vk, Device);
         _commandBuffers = VkHelper.CreateCommandBuffers(_vk, Device, _commandPool, FramesInFlight);
         _semaphores = VkHelper.CreateSemaphores(_vk, Device, FramesInFlight);
+        
+        NextFrame();
     }
     
     public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
@@ -106,17 +109,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     
     public override void Clear(Color color)
     {
-        if (!VkHelper.NextFrame(_khrSwapchain, _swapchain, Device, _fence, out _currentImage))
-            RecreateSwapchain();
-        
-        _vk.WaitForFences(Device, 1, in _fence, false, ulong.MaxValue).Check("Wait for fence");
-        _vk.ResetFences(Device, 1, in _fence);
-        _currentFrameInFlight++;
-        if (_currentFrameInFlight >= FramesInFlight)
-            _currentFrameInFlight = 0;
-        
         Image image = _swapchainImages[_currentImage];
-        VkHelper.BeginCommandBuffer(_vk, CurrentCommandBuffer);
         VkHelper.TransitionImage(_vk, CurrentCommandBuffer, image, ImageLayout.Undefined,
             ImageLayout.ColorAttachmentOptimal);
 
@@ -164,24 +157,30 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
                 result.Check("Present");
                 break;
         }
+        
+        NextFrame();
     }
 
-    public void CopyToBuffer(CommandBuffer cb, VkBuffer buffer, uint offset, uint size, void* pData)
+    public void CopyToBuffer(VkBuffer buffer, uint offset, uint size, void* pData)
     {
+        if (_bufferOffset >= 64 * 1024 * 1024)
+            throw new NotImplementedException("Buffer offset too high and resizing hasn't been implemented yet!");
+        
         // TODO: Persistently mapped buffers
         void* mappedData;
         vmaMapMemory(Allocator, _transferBuffer.Allocation, &mappedData).Check("Map memory");
-        Unsafe.CopyBlock(mappedData, pData, size);
+        Unsafe.CopyBlock((byte*) mappedData + _bufferOffset, pData, size);
         vmaUnmapMemory(Allocator, _transferBuffer.Allocation);
 
         BufferCopy copy = new()
         {
-            SrcOffset = 0,
+            SrcOffset = _bufferOffset,
             DstOffset = offset,
             Size = size
         };
         
-        _vk.CmdCopyBuffer(cb, _transferBuffer.Buffer, buffer.Buffer, 1, &copy);
+        _vk.CmdCopyBuffer(CurrentCommandBuffer, _transferBuffer.Buffer, buffer.Buffer, 1, &copy);
+        _bufferOffset += size;
     }
     
     public override void Dispose()
@@ -218,6 +217,21 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         _swapchainImageViews = new ImageView[_swapchainImages.Length];
         for (int i = 0; i < _swapchainImageViews.Length; i++)
             _swapchainImageViews[i] = VkHelper.CreateImageView(_vk, Device, _swapchainImages[i], format);
+    }
+
+    private void NextFrame()
+    {
+        if (!VkHelper.NextFrame(_khrSwapchain, _swapchain, Device, _fence, out _currentImage))
+            RecreateSwapchain();
+        
+        _vk.WaitForFences(Device, 1, in _fence, false, ulong.MaxValue).Check("Wait for fence");
+        _vk.ResetFences(Device, 1, in _fence);
+        _currentFrameInFlight++;
+        if (_currentFrameInFlight >= FramesInFlight)
+            _currentFrameInFlight = 0;
+        
+        VkHelper.BeginCommandBuffer(_vk, CurrentCommandBuffer);
+        _bufferOffset = 0;
     }
 
     private nint GetInstanceProcAddress(Instance instance, byte* name)

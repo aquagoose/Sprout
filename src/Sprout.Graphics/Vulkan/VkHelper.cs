@@ -319,33 +319,35 @@ internal static unsafe class VkHelper
         return commandPool;
     }
 
-    public static CommandBuffer CreateCommandBuffer(Vk vk, Device device, CommandPool pool)
+    public static CommandBuffer[] CreateCommandBuffers(Vk vk, Device device, CommandPool pool, uint numCommandBuffers)
     {
         CommandBufferAllocateInfo allocInfo = new()
         {
             SType = StructureType.CommandBufferAllocateInfo,
             CommandPool = pool,
-            CommandBufferCount = 1,
+            CommandBufferCount = numCommandBuffers,
             Level = CommandBufferLevel.Primary
         };
 
-        CommandBuffer buffer;
-        vk.AllocateCommandBuffers(device, &allocInfo, &buffer).Check("Allocate command buffers");
+        CommandBuffer[] buffers = new CommandBuffer[numCommandBuffers];
+        fixed (CommandBuffer* pBuffers = buffers)
+            vk.AllocateCommandBuffers(device, &allocInfo, pBuffers).Check("Allocate command buffers");
 
-        return buffer;
+        return buffers;
     }
 
-    public static Semaphore CreateSemaphore(Vk vk, Device device)
+    public static Semaphore[] CreateSemaphores(Vk vk, Device device, uint numSemaphores)
     {
         SemaphoreCreateInfo semaphoreInfo = new()
         {
             SType = StructureType.SemaphoreCreateInfo
         };
 
-        Semaphore semaphore;
-        vk.CreateSemaphore(device, &semaphoreInfo, null, &semaphore).Check("Create semaphore");
+        Semaphore[] semaphores = new Semaphore[numSemaphores];
+        for (uint i = 0; i < numSemaphores; i++)
+            vk.CreateSemaphore(device, &semaphoreInfo, null, out semaphores[i]).Check("Create semaphore");
 
-        return semaphore;
+        return semaphores;
     }
 
     public static Fence CreateFence(Vk vk, Device device)

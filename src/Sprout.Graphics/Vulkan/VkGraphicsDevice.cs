@@ -33,21 +33,20 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     private Extent2D _swapchainSize;
     private uint _currentImage;
 
+    private readonly CommandBuffer[] _commandBuffers;
+    private readonly Semaphore[] _semaphores;
+    
     private uint _currentFrameInFlight;
     private readonly Fence _fence;
-
-    private readonly Queue<CommandBuffer> _availableCommandBuffers;
-    private readonly Queue<Semaphore> _availableSemaphores;
-
-    private readonly List<CommandBuffer> _finishedCommandBuffers;
-    private readonly List<Semaphore> _finishedSemaphores;
 
     private readonly VkBuffer _transferBuffer;
     
     public readonly Device Device;
     public readonly Allocator* Allocator;
 
-    public CommandBuffer CurrentCommandBuffer;
+    public CommandBuffer CurrentCommandBuffer => _commandBuffers[_currentFrameInFlight];
+
+    public Semaphore CurrentSemaphore => _semaphores[_currentFrameInFlight];
     
     public override Backend Backend => Backend.Vulkan;
 
@@ -58,11 +57,6 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         _vk = Vk.GetApi();
         _window = sdlWindow;
         _instance = VkHelper.CreateInstance(_vk, AppDomain.CurrentDomain.FriendlyName);
-
-        _availableCommandBuffers = [];
-        _availableSemaphores = [];
-        _finishedCommandBuffers = [];
-        _finishedSemaphores = [];
         
         if (!_vk.TryGetInstanceExtension(_instance, out _khrSurface))
             throw new Exception("Failed to get KhrSurface extension!");
@@ -91,6 +85,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
             _swapchainImageViews[i] = VkHelper.CreateImageView(_vk, Device, _swapchainImages[i], format);
         
         _fence = VkHelper.CreateFence(_vk, Device);
+        _commandBuffers = VkHelper.CreateCommandBuffers(_vk, Device, _commandPool, FramesInFlight);
+        _semaphores = VkHelper.CreateSemaphores(_vk, Device, FramesInFlight);
     }
     
     public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
@@ -113,14 +109,6 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         if (!VkHelper.NextFrame(_khrSwapchain, _swapchain, Device, _fence, out _currentImage))
             RecreateSwapchain();
         
-        foreach (CommandBuffer cb in _finishedCommandBuffers)
-            _availableCommandBuffers.Enqueue(cb);
-        _finishedCommandBuffers.Clear();
-        
-        foreach (Semaphore s in _finishedSemaphores)
-            _availableSemaphores.Enqueue(s);
-        _finishedSemaphores.Clear();
-        
         _vk.WaitForFences(Device, 1, in _fence, false, ulong.MaxValue).Check("Wait for fence");
         _vk.ResetFences(Device, 1, in _fence);
         _currentFrameInFlight++;
@@ -128,7 +116,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
             _currentFrameInFlight = 0;
         
         Image image = _swapchainImages[_currentImage];
-        CurrentCommandBuffer = BeginCommandBuffer();
+        VkHelper.BeginCommandBuffer(_vk, CurrentCommandBuffer);
         VkHelper.TransitionImage(_vk, CurrentCommandBuffer, image, ImageLayout.Undefined,
             ImageLayout.ColorAttachmentOptimal);
 
@@ -145,13 +133,14 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     public override void Present()
     {
         Image image = _swapchainImages[_currentImage];
+        Semaphore semaphore = CurrentSemaphore;
         
         VkHelper.EndRendering(_vk, CurrentCommandBuffer);
 
         VkHelper.TransitionImage(_vk, CurrentCommandBuffer, image, ImageLayout.ColorAttachmentOptimal,
             ImageLayout.PresentSrcKhr);
         
-        Semaphore semaphore = ExecuteCommandBuffer(CurrentCommandBuffer);
+        VkHelper.ExecuteCommandBuffer(_vk, CurrentCommandBuffer, in _queues, null, semaphore);
 
         PresentInfoKHR presentInfo = new()
         {
@@ -194,32 +183,6 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         
         _vk.CmdCopyBuffer(cb, _transferBuffer.Buffer, buffer.Buffer, 1, &copy);
     }
-
-    public CommandBuffer BeginCommandBuffer()
-    {
-        if (_availableCommandBuffers.TryDequeue(out CommandBuffer buffer))
-            return buffer;
-        
-        // No command buffers available!
-        buffer = VkHelper.CreateCommandBuffer(_vk, Device, _commandPool);
-        VkHelper.BeginCommandBuffer(_vk, buffer);
-
-        return buffer;
-    }
-
-    public Semaphore ExecuteCommandBuffer(CommandBuffer cb)
-    {
-        Semaphore? waitSemaphore = null;
-        if (_finishedSemaphores.Count > 0)
-            waitSemaphore = _finishedSemaphores[^1];
-
-        Semaphore signalSemaphore = GetSemaphore();
-        VkHelper.ExecuteCommandBuffer(_vk, cb, in _queues, waitSemaphore, signalSemaphore);
-        _finishedCommandBuffers.Add(cb);
-        _finishedSemaphores.Add(signalSemaphore);
-
-        return signalSemaphore;
-    }
     
     public override void Dispose()
     {
@@ -255,14 +218,6 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         _swapchainImageViews = new ImageView[_swapchainImages.Length];
         for (int i = 0; i < _swapchainImageViews.Length; i++)
             _swapchainImageViews[i] = VkHelper.CreateImageView(_vk, Device, _swapchainImages[i], format);
-    }
-
-    private Semaphore GetSemaphore()
-    {
-        if (_availableSemaphores.TryDequeue(out Semaphore semaphore))
-            return semaphore;
-        
-        return VkHelper.CreateSemaphore(_vk, Device);
     }
 
     private nint GetInstanceProcAddress(Instance instance, byte* name)

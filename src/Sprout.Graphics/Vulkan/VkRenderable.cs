@@ -208,14 +208,18 @@ internal sealed unsafe class VkRenderable : Renderable
     
     public override void UpdateVertices<T>(uint offset, ReadOnlySpan<T> vertices)
     {
-        VkHelper.BeginCommandBuffer(_vk, _device.CommandBuffer);
-        _device.CopyToBuffer();
-        VkHelper.ExecuteCommandBuffer(_vk, );
+        CommandBuffer cb = _device.BeginCommandBuffer();
+        fixed (void* pVertices = vertices)
+            _device.CopyToBuffer(cb, _vertexBuffer, offset, (uint) (vertices.Length * sizeof(T)), pVertices);
+        _device.ExecuteCommandBuffer(cb);
     }
     
     public override void UpdateIndices(uint offset, ReadOnlySpan<uint> indices)
     {
-        throw new NotImplementedException();
+        CommandBuffer cb = _device.BeginCommandBuffer();
+        fixed (void* pVertices = indices)
+            _device.CopyToBuffer(cb, _indexBuffer, offset, (uint) (indices.Length * sizeof(uint)), pVertices);
+        _device.ExecuteCommandBuffer(cb);
     }
 
     public override void PushUniformData(uint index, uint offset, uint sizeInBytes, void* pData)
@@ -235,7 +239,7 @@ internal sealed unsafe class VkRenderable : Renderable
     
     public override void Draw(uint numElements)
     {
-        CommandBuffer cb = _device.CommandBuffer;
+        CommandBuffer cb = _device.CurrentCommandBuffer;
         
         _vk.CmdBindPipeline(cb, PipelineBindPoint.Graphics, _pipeline);
         _vk.CmdDraw(cb, numElements, 1, 0, 0);

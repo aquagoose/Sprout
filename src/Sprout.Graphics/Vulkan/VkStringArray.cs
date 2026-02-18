@@ -23,7 +23,7 @@ internal unsafe struct VkStringArray : IDisposable
             uint dataSize = (uint) (data.Length * sizeof(byte));
             _array[i] = (byte*) NativeMemory.Alloc(dataSize + 1);
             // Ensure null byte at end of string.
-            _array[i][data.Length - 1] = 0;
+            _array[i][data.Length] = 0;
             fixed (byte* pData = data)
                 Unsafe.CopyBlock(_array[i], pData, dataSize);
         }

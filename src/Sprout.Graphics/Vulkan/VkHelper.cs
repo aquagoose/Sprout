@@ -123,6 +123,7 @@ internal static unsafe class VkHelper
     public static Device CreateDevice(Vk vk, PhysicalDevice physicalDevice, ref Queues queues)
     {
         using VkStringArray extensions = new(KhrSwapchain.ExtensionName);
+        Console.WriteLine(new string((sbyte*) ((byte**) extensions.Handle)[0]));
         
         HashSet<uint> uniqueQueues = queues.UniqueFamilies;
         int numUniqueQueues = uniqueQueues.Count;
@@ -318,36 +319,33 @@ internal static unsafe class VkHelper
         return commandPool;
     }
 
-    public static CommandBuffer[] CreateCommandBuffers(Vk vk, Device device, CommandPool pool, uint numBuffers)
+    public static CommandBuffer CreateCommandBuffer(Vk vk, Device device, CommandPool pool)
     {
         CommandBufferAllocateInfo allocInfo = new()
         {
             SType = StructureType.CommandBufferAllocateInfo,
             CommandPool = pool,
-            CommandBufferCount = numBuffers,
+            CommandBufferCount = 1,
             Level = CommandBufferLevel.Primary
         };
 
-        CommandBuffer[] buffers = new CommandBuffer[numBuffers];
-        fixed (CommandBuffer* pBuffers = buffers)
-            vk.AllocateCommandBuffers(device, &allocInfo, buffers).Check("Allocate command buffers");
+        CommandBuffer buffer;
+        vk.AllocateCommandBuffers(device, &allocInfo, &buffer).Check("Allocate command buffers");
 
-        return buffers;
+        return buffer;
     }
 
-    public static Semaphore[] CreateSemaphores(Vk vk, Device device, uint numSemaphores)
+    public static Semaphore CreateSemaphore(Vk vk, Device device)
     {
         SemaphoreCreateInfo semaphoreInfo = new()
         {
             SType = StructureType.SemaphoreCreateInfo
         };
 
-        Semaphore[] semaphores = new Semaphore[numSemaphores];
+        Semaphore semaphore;
+        vk.CreateSemaphore(device, &semaphoreInfo, null, &semaphore).Check("Create semaphore");
 
-        for (uint i = 0; i < numSemaphores; i++)
-            vk.CreateSemaphore(device, &semaphoreInfo, null, out semaphores[i]);
-
-        return semaphores;
+        return semaphore;
     }
 
     public static Fence CreateFence(Vk vk, Device device)

@@ -363,7 +363,7 @@ internal static unsafe class VkHelper
         return fence;
     }
 
-    public static VkBuffer CreateBuffer(Allocator* allocator, BufferUsageFlags usage, uint size)
+    public static VkBuffer CreateBuffer(Allocator* allocator, BufferUsageFlags usage, uint size, bool mappable)
     {
         BufferCreateInfo bufferInfo = new()
         {
@@ -375,7 +375,7 @@ internal static unsafe class VkHelper
         AllocationCreateInfo allocationInfo = new()
         {
             usage = VMA_MEMORY_USAGE_AUTO,
-            flags = (uint) VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+            flags = (uint) (mappable ? VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT : 0)
         };
 
         Buffer buffer;

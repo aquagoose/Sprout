@@ -37,6 +37,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     private readonly Fence _fence;
     private readonly CommandBuffer[] _commandBuffers;
     private readonly Semaphore[] _queueSubmitSemaphores;
+
+    private readonly VkBuffer _transferBuffer;
     
     public readonly Device Device;
     public readonly Allocator* Allocator;
@@ -67,6 +69,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         _commandPool = VkHelper.CreateCommandPool(_vk, Device, in _queues);
         Allocator = VkHelper.CreateAllocator(_instance, _physicalDevice, Device, GetInstanceProcAddress,
             GetDeviceProcAddress);
+
+        _transferBuffer = VkHelper.CreateBuffer(Allocator, BufferUsageFlags.TransferSrcBit, 64 * 1024 * 1024, true);
         
         if (!_vk.TryGetDeviceExtension(_instance, Device, out _khrSwapchain))
             throw new Exception("Failed to get KhrSwapchain extension!");
@@ -158,6 +162,24 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
                 result.Check("Present");
                 break;
         }
+    }
+
+    public void CopyToBuffer(CommandBuffer cb, VkBuffer buffer, uint offset, uint size, void* pData)
+    {
+        // TODO: Persistently mapped buffers
+        void* mappedData;
+        vmaMapMemory(Allocator, _transferBuffer.Allocation, &mappedData).Check("Map memory");
+        Unsafe.CopyBlock(mappedData, pData, size);
+        vmaUnmapMemory(Allocator, _transferBuffer.Allocation);
+
+        BufferCopy copy = new()
+        {
+            SrcOffset = 0,
+            DstOffset = offset,
+            Size = size
+        };
+        
+        _vk.CmdCopyBuffer(cb, _transferBuffer.Buffer, buffer.Buffer, 1, &copy);
     }
     
     public override void Dispose()

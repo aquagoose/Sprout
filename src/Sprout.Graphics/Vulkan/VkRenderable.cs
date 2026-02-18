@@ -24,6 +24,32 @@ internal sealed unsafe class VkRenderable : Renderable
         _device = device;
 
         VkShader shader = (VkShader) info.Shader;
+
+        VertexInputBindingDescription vertexInputBinding = new VertexInputBindingDescription();
+        if (info.NumVertices > 0)
+        {
+            Debug.Assert(info.VertexSize > 0);
+
+            _vertexBuffer = VkHelper.CreateBuffer(_device.Allocator,
+                BufferUsageFlags.VertexBufferBit | BufferUsageFlags.TransferDstBit, info.NumVertices * info.VertexSize,
+                false);
+
+            vertexInputBinding = new VertexInputBindingDescription
+            {
+                Binding = 0,
+                InputRate = VertexInputRate.Vertex,
+                Stride = info.VertexSize
+            };
+        }
+
+        if (info.NumIndices > 0)
+        {
+            Debug.Assert(info.NumVertices > 0);
+
+            _indexBuffer = VkHelper.CreateBuffer(_device.Allocator,
+                BufferUsageFlags.IndexBufferBit | BufferUsageFlags.TransferDstBit, info.NumIndices * sizeof(uint),
+                false);
+        }
         
         PipelineLayoutCreateInfo layoutInfo = new()
         {
@@ -50,9 +76,44 @@ internal sealed unsafe class VkRenderable : Renderable
             };
         }
 
+        int vertexInputLength = info.VertexInput?.Length ?? 0;
+        VertexInputAttributeDescription* vertexAttributes =
+            stackalloc VertexInputAttributeDescription[vertexInputLength];
+
+        if (vertexInputLength > 0)
+        {
+            for (int i = 0; i < vertexInputLength; i++)
+            {
+                ref readonly VertexAttribute attribute = ref info.VertexInput![i];
+
+                Format format = attribute.Type switch
+                {
+                    AttributeType.Float => Format.R32Sfloat,
+                    AttributeType.Float2 => Format.R32G32Sfloat,
+                    AttributeType.Float3 => Format.R32G32B32Sfloat,
+                    AttributeType.Float4 => Format.R32G32B32A32Sfloat,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+
+                vertexAttributes[i] = new VertexInputAttributeDescription
+                {
+                    Location = attribute.Location,
+                    Binding = 0,
+                    Format = format,
+                    Offset = attribute.Offset
+                };
+            }
+        }
+
         PipelineVertexInputStateCreateInfo vertexInputState = new()
         {
-            SType = StructureType.PipelineVertexInputStateCreateInfo
+            SType = StructureType.PipelineVertexInputStateCreateInfo,
+            
+            VertexAttributeDescriptionCount = (uint) vertexInputLength,
+            PVertexAttributeDescriptions = vertexAttributes,
+            
+            VertexBindingDescriptionCount = vertexInputBinding.Stride > 0 ? 1u : 0u,
+            PVertexBindingDescriptions = &vertexInputBinding
         };
 
         PipelineInputAssemblyStateCreateInfo inputAssemblyState = new()
@@ -143,27 +204,13 @@ internal sealed unsafe class VkRenderable : Renderable
 
         _vk.CreateGraphicsPipelines(_device.Device, new PipelineCache(), 1, &pipelineInfo, null, out _pipeline)
             .Check("Create pipeline");
-
-        if (info.NumVertices > 0)
-        {
-            Debug.Assert(info.VertexSize > 0);
-            
-            _vertexBuffer = VkHelper.CreateBuffer(_device.Allocator,
-                BufferUsageFlags.VertexBufferBit | BufferUsageFlags.TransferDstBit, info.NumVertices * info.VertexSize);
-        }
-
-        if (info.NumIndices > 0)
-        {
-            Debug.Assert(info.NumVertices > 0);
-
-            _indexBuffer = VkHelper.CreateBuffer(_device.Allocator,
-                BufferUsageFlags.IndexBufferBit | BufferUsageFlags.TransferDstBit, info.NumIndices * sizeof(uint));
-        }
     }
     
     public override void UpdateVertices<T>(uint offset, ReadOnlySpan<T> vertices)
     {
-        throw new NotImplementedException();
+        VkHelper.BeginCommandBuffer(_vk, _device.CommandBuffer);
+        _device.CopyToBuffer();
+        VkHelper.ExecuteCommandBuffer(_vk, );
     }
     
     public override void UpdateIndices(uint offset, ReadOnlySpan<uint> indices)

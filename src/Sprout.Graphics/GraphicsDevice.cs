@@ -67,37 +67,9 @@ public abstract class GraphicsDevice : IDisposable
     /// Create a <see cref="GraphicsDevice"/>.
     /// </summary>
     /// <param name="sdlWindow">The SDL3 window to create the device with.</param>
-    /// <param name="backend">The <see cref="Sprout.Graphics.Backend"/> to use, if any. Pass
-    /// <see cref="Backend.Unknown"/> to automatically pick the best backend.</param>
+    /// <param name="backend">The <see cref="Sprout.Graphics.Backend"/> to use.</param>
     /// <returns>The created <see cref="GraphicsDevice"/>.</returns>
-    public static GraphicsDevice Create(IntPtr sdlWindow, Backend backend = Backend.Unknown)
-    {
-        if (backend != Backend.Unknown)
-            return CreateDeviceFromBackend(backend, sdlWindow);
-        
-        List<Backend> backends = [];
-        if (OperatingSystem.IsWindows())
-            backends.Add(Backend.D3D11);
-        
-        // OpenGL is the "fallback" backend. If none others are available, OpenGL will be used.
-        backends.Add(Backend.OpenGL);
-
-        foreach (Backend tryBackend in backends)
-        {
-            try
-            {
-                return CreateDeviceFromBackend(tryBackend, sdlWindow);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-        }
-
-        throw new PlatformNotSupportedException("No available backends!");
-    }
-
-    private static GraphicsDevice CreateDeviceFromBackend(Backend backend, IntPtr sdlWindow)
+    public static GraphicsDevice Create(IntPtr sdlWindow, Backend backend)
     {
         return backend switch
         {

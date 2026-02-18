@@ -109,8 +109,8 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         {
             TopLeftX = 0,
             TopLeftY = 0,
-            Width = 800,
-            Height = 600,
+            Width = _swapchainSize.Width,
+            Height = _swapchainSize.Height,
             MinDepth = 0,
             MaxDepth = 1
         };

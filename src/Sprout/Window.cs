@@ -25,7 +25,7 @@ public sealed class Window : IDisposable
         if (!SDL.Init(SDL.InitFlags.Video))
             throw new Exception($"Failed to initialize SDL: {SDL.GetError()}");
 
-        SDL.WindowFlags flags = 0;
+        SDL.WindowFlags flags = SDL.WindowFlags.HighPixelDensity;
         
         switch (backend)
         {

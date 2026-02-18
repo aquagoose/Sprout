@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using SDL3;
 using TerraFX.Interop.DirectX;
 using TerraFX.Interop.Windows;
@@ -20,10 +21,13 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
     private readonly ID3D11Device* _device;
     private readonly ID3D11DeviceContext* _context;
 
+    private Size _swapchainSize;
     private ID3D11Texture2D* _swapchainTexture;
     private ID3D11RenderTargetView* _swapchainTarget;
 
     public override Backend Backend => Backend.D3D11;
+
+    public override Size SwapchainSize => _swapchainSize;
 
     public D3D11GraphicsDevice(IntPtr sdlWindow)
     {
@@ -38,6 +42,7 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
             hwnd = sdlWindow;
 
         SDL.GetWindowSizeInPixels(sdlWindow, out int width, out int height);
+        _swapchainSize = new Size(width, height);
 
         DXGI_SWAP_CHAIN_DESC swapchainDesc = new()
         {

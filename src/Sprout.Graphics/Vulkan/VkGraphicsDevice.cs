@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Runtime.CompilerServices;
 using SDL3;
 using Silk.NET.Vulkan;
@@ -45,6 +46,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     public Semaphore Semaphore => _queueSubmitSemaphores[_currentFrameInFlight];
     
     public override Backend Backend => Backend.Vulkan;
+
+    public override Size SwapchainSize => new Size((int) _swapchainSize.Width, (int) _swapchainSize.Height);
 
     public VkGraphicsDevice(IntPtr sdlWindow)
     {

@@ -20,6 +20,11 @@ public abstract class GraphicsDevice : IDisposable
     /// Gets the <see cref="Sprout.Graphics.Backend"/> render API used for this <see cref="GraphicsDevice"/> instance.
     /// </summary>
     public abstract Backend Backend { get; }
+    
+    /// <summary>
+    /// Gets the size of the swapchain.
+    /// </summary>
+    public abstract Size SwapchainSize { get; }
 
     public abstract Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments);
 

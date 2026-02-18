@@ -15,6 +15,8 @@ public class SpriteRenderer : IDisposable
     private const uint NumVertices = 4;
     private const uint NumIndices = 6;
 
+    private readonly GraphicsDevice _device;
+    
     private readonly Shader _shader;
     private readonly Renderable _renderable;
 
@@ -24,6 +26,8 @@ public class SpriteRenderer : IDisposable
 
     public SpriteRenderer(GraphicsDevice device)
     {
+        _device = device;
+        
         PreCompiledShader pcsh = PreCompiledShader.FromEmbeddedResource("Sprout.Graphics.Shaders.SpriteRenderer.pcsh");
         byte[] vertexShader = pcsh.GetSource(device.Backend, ShaderStage.Vertex, out string vertexEntry);
         byte[] pixelShader = pcsh.GetSource(device.Backend, ShaderStage.Pixel, out string pixelEntry);
@@ -124,8 +128,10 @@ public class SpriteRenderer : IDisposable
 
     public void Render(Matrix4x4? transform = null, Matrix4x4? projection = null)
     {
+        Size swapchainSize = _device.SwapchainSize;
+
         TransformMatrices matrices = new TransformMatrices(
-            projection ?? Matrix4x4.CreateOrthographicOffCenter(0, 800, 600, 0, -1, 1),
+            projection ?? Matrix4x4.CreateOrthographicOffCenter(0, swapchainSize.Width, swapchainSize.Height, 0, -1, 1),
             transform ?? Matrix4x4.Identity);
         
         _renderable.PushUniformData(0, matrices);

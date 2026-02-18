@@ -1,3 +1,4 @@
+using System.Drawing;
 using SDL3;
 using Silk.NET.OpenGL;
 
@@ -10,8 +11,12 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
     private readonly IntPtr _sdlWindow;
     private readonly nint _glContext;
     private readonly GL _gl;
+
+    private Size _swapchainSize;
     
     public override Backend Backend => Backend.OpenGL;
+
+    public override Size SwapchainSize => _swapchainSize;
 
     public GLGraphicsDevice(IntPtr sdlWindow)
     {
@@ -25,6 +30,9 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
             throw new Exception("Failed to make GL context current.");
         
         _gl = GL.GetApi(SDL.GLGetProcAddress);
+
+        SDL.GetWindowSizeInPixels(_sdlWindow, out int w, out int h);
+        _swapchainSize = new Size(w, h);
     }
 
     public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)

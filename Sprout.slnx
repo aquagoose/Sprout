@@ -1,5 +1,7 @@
 <Solution>
-  <Folder Name="/tests/" />
+  <Folder Name="/tests/">
+    <Project Path="tests/Sprout.Tests.WindowAndEvents/Sprout.Tests.WindowAndEvents.csproj" />
+  </Folder>
   <Folder Name="/tests/Graphics/">
     <Project Path="tests/Graphics/Sprout.Graphics.Tests.Base/Sprout.Graphics.Tests.Base.csproj" />
     <Project Path="tests/Graphics/Sprout.Graphics.Tests.BuffersTest/Sprout.Graphics.Tests.BuffersTest.csproj" />

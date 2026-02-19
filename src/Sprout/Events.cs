@@ -5,6 +5,10 @@ namespace Sprout;
 public sealed class Events : IDisposable
 {
     public event OnQuit Quit;
+
+    public event OnKeyDown KeyDown;
+
+    public event OnKeyUp KeyUp;
     
     public Events()
     {
@@ -12,6 +16,8 @@ public sealed class Events : IDisposable
             throw new Exception($"Failed to initialize SDL: {SDL.GetError()}");
 
         Quit = delegate { };
+        KeyDown = delegate { };
+        KeyUp = delegate { };
     }
 
     public void PollEvents()
@@ -24,6 +30,13 @@ public sealed class Events : IDisposable
                 case SDL.EventType.Quit:
                     Quit();
                     break;
+                
+                case SDL.EventType.KeyDown:
+                    KeyDown(SdlUtils.KeycodeToKey(winEvent.Key.Key));
+                    break;
+                case SDL.EventType.KeyUp:
+                    KeyUp(SdlUtils.KeycodeToKey(winEvent.Key.Key));
+                    break;
             }
         }
     }
@@ -34,4 +47,8 @@ public sealed class Events : IDisposable
     }
 
     public delegate void OnQuit();
+
+    public delegate void OnKeyDown(Key key);
+
+    public delegate void OnKeyUp(Key key);
 }

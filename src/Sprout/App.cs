@@ -8,10 +8,13 @@ public abstract class App : IDisposable
 {
     private Window _window = null!;
     private Events _events = null!;
-    private GraphicsDevice _device = null;
+    private Input _input = null!;
+    private GraphicsDevice _device = null!;
     private bool _alive;
 
     public GraphicsDevice GraphicsDevice => _device;
+
+    public Input Input => _input;
 
     protected virtual void Initialize() { }
 
@@ -33,6 +36,8 @@ public abstract class App : IDisposable
         _events = new Events();
         _events.Quit += Close;
 
+        _input = new Input(_events);
+        
         _device = GraphicsDevice.Create(_window.Handle, backend);
 
         Initialize();
@@ -41,6 +46,7 @@ public abstract class App : IDisposable
         _alive = true;
         while (_alive)
         {
+            _input.Update();
             _events.PollEvents();
 
             double dt = sw.Elapsed.TotalSeconds;
@@ -62,6 +68,7 @@ public abstract class App : IDisposable
     {
         Unload();
         _device.Dispose();
+        _input.Dispose();
         _events.Dispose();
         _window.Dispose();
     }

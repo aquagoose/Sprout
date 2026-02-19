@@ -7,6 +7,7 @@ public class Game : App
 {
     private SpriteRenderer _spriteRenderer = null!;
     private Texture _texture = null!;
+    private Vector2 _position;
     
     protected override void Initialize()
     {
@@ -14,11 +15,25 @@ public class Game : App
         _texture = GraphicsDevice.CreateTexture("Content/BAGELMIP.png");
     }
 
+    protected override void Update(float dt)
+    {
+        const float speed = 50;
+
+        if (Input.IsKeyDown(Key.W))
+            _position.Y -= speed * dt;
+        if (Input.IsKeyDown(Key.S))
+            _position.Y += speed * dt;
+        if (Input.IsKeyDown(Key.D))
+            _position.X += speed * dt;
+        if (Input.IsKeyDown(Key.A))
+            _position.X -= speed * dt;
+    }
+
     protected override void Draw()
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
         
-        _spriteRenderer.Draw(_texture, new Vector2(0, 0));
+        _spriteRenderer.Draw(_texture, _position);
         _spriteRenderer.Render();
     }
 }

@@ -15,6 +15,9 @@ internal sealed unsafe class D3D11Texture : Texture
 
     public readonly ID3D11Texture2D* Texture;
     public readonly ID3D11ShaderResourceView* TextureSrv;
+    
+    // TODO: Samplers
+    public override Sampler Sampler { get; set; }
 
     public D3D11Texture(ID3D11Device* device, ID3D11DeviceContext* context, uint width, uint height, PixelFormat format,
         void* pData) : base(new Size((int) width, (int) height))

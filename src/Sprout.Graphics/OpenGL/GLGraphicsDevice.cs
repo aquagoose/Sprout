@@ -42,7 +42,7 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
 
     protected override unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, void* data)
     {
-        return new GLTexture(_gl, width, height, format, data);
+        return new GLTexture(_gl, width, height, format, data, Sampler.Linear);
     }
 
     public override Renderable CreateRenderable(in RenderableInfo info)

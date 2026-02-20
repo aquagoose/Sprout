@@ -11,7 +11,37 @@ internal sealed unsafe class GLTexture : Texture
     
     public readonly uint Texture;
 
-    public GLTexture(GL gl, uint width, uint height, PixelFormat format, void* pData) : base(new Size((int) width, (int) height))
+    public override Sampler Sampler
+    {
+        get => field;
+        set
+        {
+            field = value;
+
+            TextureMinFilter minFilter = (value.MinFilter, value.MipFilter) switch
+            {
+                (Filter.Linear, Filter.Linear) => TextureMinFilter.LinearMipmapLinear,
+                (Filter.Linear, Filter.Point) => TextureMinFilter.LinearMipmapNearest,
+                (Filter.Point, Filter.Linear) => TextureMinFilter.NearestMipmapLinear,
+                (Filter.Point, Filter.Point) => TextureMinFilter.NearestMipmapNearest,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            TextureMagFilter magFilter = value.MagFilter switch
+            {
+                Filter.Linear => TextureMagFilter.Linear,
+                Filter.Point => TextureMagFilter.Nearest,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int) minFilter);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int) magFilter);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int) TextureWrapMode.Repeat);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int) TextureWrapMode.Repeat);
+        }
+    }
+
+    public GLTexture(GL gl, uint width, uint height, PixelFormat format, void* pData, Sampler sampler) : base(new Size((int) width, (int) height))
     {
         _gl = gl;
 
@@ -25,12 +55,7 @@ internal sealed unsafe class GLTexture : Texture
         _gl.BindTexture(TextureTarget.Texture2D, Texture);
         _gl.TexImage2D(TextureTarget.Texture2D, 0, iFmt, width, height, 0, fmt, type, pData);
 
-        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
-            (int) TextureMinFilter.LinearMipmapLinear);
-        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int) TextureMagFilter.Linear);
-        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int) TextureWrapMode.Repeat);
-        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int) TextureWrapMode.Repeat);
-        
+        Sampler = sampler;
         _gl.GenerateMipmap(TextureTarget.Texture2D);
     }
     

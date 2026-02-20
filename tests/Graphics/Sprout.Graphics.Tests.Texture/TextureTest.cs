@@ -11,6 +11,7 @@ public class TextureTest() : TestBase("Texture Test")
     private STexture _texture;
     private Shader _shader;
     private Renderable _renderable;
+    private bool _pointSampler;
 
     private float _rotation;
 
@@ -66,8 +67,12 @@ public class TextureTest() : TestBase("Texture Test")
     {
         _rotation += dt;
         if (_rotation >= float.Pi * 2)
+        {
             _rotation -= float.Pi * 2;
-        
+            _pointSampler = !_pointSampler;
+            _texture.Sampler = _pointSampler ? Sampler.Point : Sampler.Linear;
+        }
+
         Device.Clear(Color.CornflowerBlue);
         _renderable.PushTexture(0, _texture);
         _renderable.PushUniformData(1, Matrix4x4.CreateRotationZ(_rotation));

@@ -157,7 +157,8 @@ internal sealed unsafe class GLRenderable : Renderable
     public override void PushTexture(uint index, Texture texture)
     {
         Debug.Assert((_uniforms?.TryGetValue(index, out GLUniform uniform) ?? false) && uniform.Type == UniformType.Texture,
-            "Texture index is not valid or is not a texture uniform");
+            "Texture index is not valid or is not a texture uniform!");
+        Debug.Assert((texture.Usage & TextureUsage.Shader) != 0, "Texture was not created with the 'Shader' usage flag!");
      
         _gl.BindVertexArray(_vao);
         

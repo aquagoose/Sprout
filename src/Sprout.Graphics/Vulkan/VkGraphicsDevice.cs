@@ -97,7 +97,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         return new VkShader(_vk, Device, in attachments);
     }
     
-    protected override unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, void* data)
+    protected override Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage, void* data)
     {
         throw new NotImplementedException();
     }
@@ -106,7 +106,12 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     {
         return new VkRenderable(_vk, this, in info);
     }
-    
+
+    public override void SetRenderTextures(ReadOnlySpan<Texture> colorTextures)
+    {
+        throw new NotImplementedException();
+    }
+
     public override void Clear(Color color)
     {
         Image image = _swapchainImages[_currentImage];

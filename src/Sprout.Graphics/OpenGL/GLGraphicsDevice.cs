@@ -12,6 +12,8 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
     private readonly nint _glContext;
     private readonly GL _gl;
 
+    private readonly Dictionary<int, uint> _framebuffers;
+
     private Size _swapchainSize;
     
     public override Backend Backend => Backend.OpenGL;
@@ -21,6 +23,7 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
     public GLGraphicsDevice(IntPtr sdlWindow)
     {
         _sdlWindow = sdlWindow;
+        _framebuffers = [];
 
         _glContext = SDL.GLCreateContext(_sdlWindow);
         if (_glContext == 0)
@@ -40,14 +43,60 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         return new GLShader(_gl, in attachments);
     }
 
-    protected override unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, void* data)
+    protected override unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage,
+        void* data)
     {
-        return new GLTexture(_gl, width, height, format, data, Sampler.Linear);
+        return new GLTexture(_gl, width, height, format, usage, data);
     }
 
     public override Renderable CreateRenderable(in RenderableInfo info)
     {
         return new GLRenderable(_gl, in info);
+    }
+
+    public override void SetRenderTextures(ReadOnlySpan<Texture> colorTextures)
+    {
+        const FramebufferTarget fbTarget = FramebufferTarget.DrawFramebuffer;
+        
+        if (colorTextures.Length == 0)
+        {
+            _gl.BindFramebuffer(fbTarget, 0);
+            return;
+        }
+        
+        HashCode hashCode = new HashCode();
+        foreach (Texture texture in colorTextures)
+            hashCode.Add(texture);
+
+        if (!_framebuffers.TryGetValue(hashCode.ToHashCode(), out uint framebuffer))
+        {
+            Console.WriteLine("Creating new framebuffer!");
+            framebuffer = _gl.GenFramebuffer();
+            _gl.BindFramebuffer(fbTarget, framebuffer);
+
+            int attachmentIndex = 0;
+            foreach (Texture texture in colorTextures)
+            {
+                GLTexture glTexture = (GLTexture) texture;
+                FramebufferAttachment attachment = FramebufferAttachment.ColorAttachment0 + attachmentIndex++;
+                
+                if (glTexture.IsRenderbuffer)
+                {
+                    _gl.FramebufferRenderbuffer(fbTarget, attachment, RenderbufferTarget.Renderbuffer,
+                        glTexture.Texture);
+                }
+                else
+                    _gl.FramebufferTexture2D(fbTarget, attachment, TextureTarget.Texture2D, glTexture.Texture, 0);
+            }
+
+            FramebufferStatus status = (FramebufferStatus) _gl.CheckFramebufferStatus(fbTarget);
+            if (status != FramebufferStatus.Complete)
+                throw new Exception($"Framebuffer is not complete: {status}");
+            
+            _framebuffers.Add(hashCode.ToHashCode(), framebuffer);
+        }
+        
+        _gl.BindFramebuffer(FramebufferTarget.DrawFramebuffer, framebuffer);
     }
 
     public override void Clear(Color color)

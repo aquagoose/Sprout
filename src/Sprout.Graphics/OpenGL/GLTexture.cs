@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Drawing;
 using Silk.NET.OpenGL;
 
@@ -10,6 +11,7 @@ internal sealed unsafe class GLTexture : Texture
     private readonly GL _gl;
     
     public readonly uint Texture;
+    public readonly bool IsRenderbuffer;
 
     public override Sampler Sampler
     {
@@ -41,8 +43,12 @@ internal sealed unsafe class GLTexture : Texture
         }
     }
 
-    public GLTexture(GL gl, uint width, uint height, PixelFormat format, void* pData, Sampler sampler) : base(new Size((int) width, (int) height))
+    public GLTexture(GL gl, uint width, uint height, PixelFormat format, TextureUsage usage, void* pData)
+        : base(new Size((int) width, (int) height), format, usage)
     {
+        Debug.Assert((usage & TextureUsage.Shader) != 0 || (usage & TextureUsage.RenderTexture) != 0,
+            "Texture must be sampled in a shader or used as a render texture.");
+        
         _gl = gl;
 
         (Silk.NET.OpenGL.PixelFormat fmt, InternalFormat iFmt, PixelType type) = format switch
@@ -51,12 +57,31 @@ internal sealed unsafe class GLTexture : Texture
             _ => throw new ArgumentOutOfRangeException(nameof(format), format, null)
         };
 
-        Texture = _gl.GenTexture();
-        _gl.BindTexture(TextureTarget.Texture2D, Texture);
-        _gl.TexImage2D(TextureTarget.Texture2D, 0, iFmt, width, height, 0, fmt, type, pData);
+        // If the texture is only used as a render texture, and isn't used in the shader, we can instead create a
+        // RenderBuffer, which is slightly more efficient.
+        if ((Usage & TextureUsage.RenderTexture) != 0 && (Usage & TextureUsage.Shader) == 0)
+        {
+            Debug.Assert((Usage & TextureUsage.GenerateMipmaps) == 0, "Cannot generate mipmaps for render texture that is not sampled!");
+            
+            IsRenderbuffer = true;
+            Texture = _gl.GenRenderbuffer();
+            _gl.BindRenderbuffer(RenderbufferTarget.Renderbuffer, Texture);
+            _gl.RenderbufferStorage(RenderbufferTarget.Renderbuffer, iFmt, width, height);
+            _gl.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);
+        }
+        else
+        {
+            Texture = _gl.GenTexture();
+            _gl.BindTexture(TextureTarget.Texture2D, Texture);
+            _gl.TexImage2D(TextureTarget.Texture2D, 0, iFmt, width, height, 0, fmt, type, pData);
+            
+            if ((Usage & TextureUsage.GenerateMipmaps) != 0)
+                _gl.GenerateMipmap(TextureTarget.Texture2D);
+        
+            _gl.BindTexture(TextureTarget.Texture2D, 0);
+        }
 
-        Sampler = sampler;
-        _gl.GenerateMipmap(TextureTarget.Texture2D);
+        Sampler = GraphicsDevice.DefaultSampler;
     }
     
     public override void Dispose()
@@ -64,5 +89,10 @@ internal sealed unsafe class GLTexture : Texture
         if (IsDisposed)
             return;
         IsDisposed = true;
+        
+        if (IsRenderbuffer)
+            _gl.DeleteRenderbuffer(Texture);
+        else
+            _gl.DeleteTexture(Texture);
     }
 }

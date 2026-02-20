@@ -89,16 +89,21 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         return new D3D11Shader(_device, attachments);
     }
     
-    protected override unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, void* data)
+    protected override Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage, void* data)
     {
-        return new D3D11Texture(_device, _context, width, height, format, data);
+        return new D3D11Texture(_device, _context, width, height, format, usage, data);
     }
     
     public override Renderable CreateRenderable(in RenderableInfo info)
     {
         return new D3D11Renderable(_device, _context, in info);
     }
-    
+
+    public override void SetRenderTextures(ReadOnlySpan<Texture> colorTextures)
+    {
+        throw new NotImplementedException();
+    }
+
     public override void Clear(Color color)
     {
         ID3D11RenderTargetView* target = _swapchainTarget;

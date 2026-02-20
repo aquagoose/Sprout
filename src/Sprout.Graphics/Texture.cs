@@ -8,12 +8,18 @@ namespace Sprout.Graphics;
 public abstract class Texture : IDisposable
 {
     public readonly Size Size;
+
+    public readonly PixelFormat Format;
+
+    public readonly TextureUsage Usage;
     
     public abstract Sampler Sampler { get; set; }
 
-    protected Texture(Size size)
+    protected Texture(Size size, PixelFormat format, TextureUsage usage)
     {
         Size = size;
+        Format = format;
+        Usage = usage;
     }
     
     /// <summary>

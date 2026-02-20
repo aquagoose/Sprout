@@ -11,6 +11,10 @@ namespace Sprout.Graphics;
 /// </summary>
 public abstract class GraphicsDevice : IDisposable
 {
+    internal const TextureUsage DefaultTextureUsage = TextureUsage.Shader | TextureUsage.GenerateMipmaps;
+
+    internal static readonly Sampler DefaultSampler = Sampler.Linear;
+    
     /// <summary>
     /// Gets if this <see cref="GraphicsDevice"/> has been disposed.
     /// </summary>
@@ -28,29 +32,48 @@ public abstract class GraphicsDevice : IDisposable
 
     public abstract Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments);
 
-    protected abstract unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, void* data);
+    protected abstract unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage, void* data);
 
-    public unsafe Texture CreateTexture(uint width, uint height, PixelFormat format)
-        => CreateTexture(width, height, format, null);
+    public unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage = DefaultTextureUsage)
+        => CreateTexture(width, height, format, usage, null);
 
-    public unsafe Texture CreateTexture<T>(uint width, uint height, PixelFormat format, ReadOnlySpan<T> data)
+    public unsafe Texture CreateTexture<T>(uint width, uint height, PixelFormat format, ReadOnlySpan<T> data, TextureUsage usage = DefaultTextureUsage)
         where T : unmanaged
     {
         fixed (void* pData = data)
-            return CreateTexture(width, height, format, pData);
+            return CreateTexture(width, height, format, usage, pData);
     }
 
-    public Texture CreateTexture<T>(uint width, uint height, PixelFormat format, T[] data) where T : unmanaged
-        => CreateTexture(width, height, format, data.AsSpan());
+    public Texture CreateTexture<T>(uint width, uint height, PixelFormat format, T[] data, TextureUsage usage = DefaultTextureUsage) where T : unmanaged
+        => CreateTexture(width, height, format, data.AsSpan(), usage);
 
-    public Texture CreateTexture(string path)
+    public Texture CreateTexture(string path, TextureUsage usage = DefaultTextureUsage)
     {
         using FileStream stream = File.OpenRead(path);
         ImageResult result = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
-        return CreateTexture((uint) result.Width, (uint) result.Height, PixelFormat.RGBA8, result.Data);
+        return CreateTexture((uint) result.Width, (uint) result.Height, PixelFormat.RGBA8, result.Data, usage);
     }
 
     public abstract Renderable CreateRenderable(in RenderableInfo info);
+
+    /// <summary>
+    /// Set the render <see cref="Texture"/>s that will be used in subsequent draw calls. Pass an empty array (or
+    /// better, pass <see langword="null"/> into <see cref="SetRenderTexture"/>) to use the default render texture.
+    /// </summary>
+    /// <param name="colorTextures">The color textures.</param>
+    public abstract void SetRenderTextures(ReadOnlySpan<Texture> colorTextures);
+
+    /// <summary>
+    /// Set the render <see cref="Texture"/> that will be used in subsequent draw calls. Set to <see langword="null"/>
+    /// to use the default render texture.
+    /// </summary>
+    public void SetRenderTexture(Texture? renderTexture)
+    {
+        if (renderTexture == null)
+            SetRenderTextures([]);
+        else
+            SetRenderTextures([renderTexture]);
+    }
 
     /// <summary>
     /// Clear the current render target with the given clear color.

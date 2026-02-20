@@ -20,7 +20,7 @@ internal sealed unsafe class D3D11Texture : Texture
     public override Sampler Sampler { get; set; }
 
     public D3D11Texture(ID3D11Device* device, ID3D11DeviceContext* context, uint width, uint height, PixelFormat format,
-        void* pData) : base(new Size((int) width, (int) height))
+        TextureUsage usage, void* pData) : base(new Size((int) width, (int) height), format, usage)
     {
         DXGI_FORMAT dxgiFormat = format switch
         {

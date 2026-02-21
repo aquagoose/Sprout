@@ -20,14 +20,27 @@ internal sealed unsafe class GLTexture : Texture
         {
             field = value;
 
-            TextureMinFilter minFilter = (value.MinFilter, value.MipFilter) switch
+            TextureMinFilter minFilter;
+            if ((Usage & TextureUsage.GenerateMipmaps) != 0)
             {
-                (Filter.Linear, Filter.Linear) => TextureMinFilter.LinearMipmapLinear,
-                (Filter.Linear, Filter.Point) => TextureMinFilter.LinearMipmapNearest,
-                (Filter.Point, Filter.Linear) => TextureMinFilter.NearestMipmapLinear,
-                (Filter.Point, Filter.Point) => TextureMinFilter.NearestMipmapNearest,
-                _ => throw new ArgumentOutOfRangeException()
-            };
+                minFilter = (value.MinFilter, value.MipFilter) switch
+                {
+                    (Filter.Linear, Filter.Linear) => TextureMinFilter.LinearMipmapLinear,
+                    (Filter.Linear, Filter.Point) => TextureMinFilter.LinearMipmapNearest,
+                    (Filter.Point, Filter.Linear) => TextureMinFilter.NearestMipmapLinear,
+                    (Filter.Point, Filter.Point) => TextureMinFilter.NearestMipmapNearest,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+            }
+            else
+            {
+                minFilter = value.MinFilter switch
+                {
+                    Filter.Linear => TextureMinFilter.Linear,
+                    Filter.Point => TextureMinFilter.Nearest,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+            }
 
             TextureMagFilter magFilter = value.MagFilter switch
             {
@@ -75,13 +88,12 @@ internal sealed unsafe class GLTexture : Texture
             _gl.BindTexture(TextureTarget.Texture2D, Texture);
             _gl.TexImage2D(TextureTarget.Texture2D, 0, iFmt, width, height, 0, fmt, type, pData);
             
-            if ((Usage & TextureUsage.GenerateMipmaps) != 0)
+            if ((Usage & TextureUsage.GenerateMipmaps) != 0 && (Usage & TextureUsage.RenderTexture) == 0)
                 _gl.GenerateMipmap(TextureTarget.Texture2D);
-        
+            
+            Sampler = GraphicsDevice.DefaultSampler;
             _gl.BindTexture(TextureTarget.Texture2D, 0);
         }
-
-        Sampler = GraphicsDevice.DefaultSampler;
     }
     
     public override void Dispose()

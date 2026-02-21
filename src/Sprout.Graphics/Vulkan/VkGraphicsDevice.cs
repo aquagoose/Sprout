@@ -7,6 +7,7 @@ using Sprout.Graphics.Vulkan.VMA;
 using static Sprout.Graphics.Vulkan.VMA.Vma;
 using Image = Silk.NET.Vulkan.Image;
 using Semaphore = Silk.NET.Vulkan.Semaphore;
+using VkViewport = Silk.NET.Vulkan.Viewport;
 
 namespace Sprout.Graphics.Vulkan;
 
@@ -52,6 +53,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     public override Backend Backend => Backend.Vulkan;
 
     public override Size SwapchainSize => new Size((int) _swapchainSize.Width, (int) _swapchainSize.Height);
+    
+    public override Viewport Viewport { get; set; }
 
     public VkGraphicsDevice(IntPtr sdlWindow)
     {
@@ -121,7 +124,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         VkHelper.BeginRendering(_vk, CurrentCommandBuffer, [_swapchainImageViews[_currentImage]],
             new ClearColorValue(color.R, color.G, color.B, color.A), _swapchainSize);
 
-        Viewport viewport = new Viewport(0, _swapchainSize.Height, _swapchainSize.Width, -_swapchainSize.Height, 0, 1);
+        VkViewport viewport = new VkViewport(0, _swapchainSize.Height, _swapchainSize.Width, -_swapchainSize.Height, 0, 1);
         _vk.CmdSetViewport(CurrentCommandBuffer, 0, 1, &viewport);
 
         Rect2D scissor = new Rect2D(extent: new Extent2D(_swapchainSize.Width, _swapchainSize.Height));

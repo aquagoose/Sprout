@@ -29,6 +29,11 @@ public abstract class GraphicsDevice : IDisposable
     /// Gets the size of the swapchain.
     /// </summary>
     public abstract Size SwapchainSize { get; }
+    
+    /// <summary>
+    /// Gets and sets the viewport.
+    /// </summary>
+    public abstract Viewport Viewport { get; set; }
 
     public abstract Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments);
 

@@ -22,11 +22,13 @@ public class RenderTextureTest() : TestBase("Render Texture Test")
         Device.SetRenderTexture(_renderTexture);
         Device.Clear(Color.CornflowerBlue);
         
+        _renderer.Draw(_texture, Vector2.Zero);
+        _renderer.Render();
+        
         Device.SetRenderTexture(null);
         Device.Clear(Color.Black);
         
-        _renderer.Draw(_renderTexture, Vector2.Zero);
-        _renderer.Draw(_texture, new Vector2(100));
+        _renderer.Draw(_renderTexture, new Vector2(0));
         _renderer.Render();
         
         Device.Present();

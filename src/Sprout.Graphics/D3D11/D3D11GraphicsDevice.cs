@@ -28,6 +28,8 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
     public override Backend Backend => Backend.D3D11;
 
     public override Size SwapchainSize => _swapchainSize;
+    
+    public override Viewport Viewport { get; set; }
 
     public D3D11GraphicsDevice(IntPtr sdlWindow)
     {

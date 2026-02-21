@@ -128,10 +128,10 @@ public class SpriteRenderer : IDisposable
 
     public void Render(Matrix4x4? transform = null, Matrix4x4? projection = null)
     {
-        Size swapchainSize = _device.SwapchainSize;
+        Viewport viewport = _device.Viewport;
 
         TransformMatrices matrices = new TransformMatrices(
-            projection ?? Matrix4x4.CreateOrthographicOffCenter(0, swapchainSize.Width, swapchainSize.Height, 0, -1, 1),
+            projection ?? Matrix4x4.CreateOrthographicOffCenter(0, viewport.Width, viewport.Height, 0, -1, 1),
             transform ?? Matrix4x4.Identity);
         
         _renderable.PushUniformData(0, matrices);

@@ -15,10 +15,22 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
     private readonly Dictionary<int, uint> _framebuffers;
 
     private Size _swapchainSize;
+    private Viewport _viewport;
     
     public override Backend Backend => Backend.OpenGL;
 
     public override Size SwapchainSize => _swapchainSize;
+
+    public override Viewport Viewport
+    {
+        get => _viewport;
+        set
+        {
+            _viewport = value;
+            _gl.Viewport(_viewport.X, (int) (_swapchainSize.Height - _viewport.Height) + _viewport.Y, _viewport.Width,
+                _viewport.Height);
+        }
+    }
 
     public GLGraphicsDevice(IntPtr sdlWindow)
     {
@@ -61,6 +73,7 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         if (colorTextures.Length == 0)
         {
             _gl.BindFramebuffer(fbTarget, 0);
+            Viewport = new Viewport(0, 0, (uint) _swapchainSize.Width, (uint) _swapchainSize.Height);
             return;
         }
         
@@ -97,6 +110,7 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         }
         
         _gl.BindFramebuffer(FramebufferTarget.DrawFramebuffer, framebuffer);
+        Viewport = new Viewport(0, 0, (uint) colorTextures[0].Size.Width, (uint) colorTextures[0].Size.Height);
     }
 
     public override void Clear(Color color)

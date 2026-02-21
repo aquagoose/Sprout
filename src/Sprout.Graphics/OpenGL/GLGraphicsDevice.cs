@@ -27,7 +27,7 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         set
         {
             _viewport = value;
-            _gl.Viewport(_viewport.X, (int) (_swapchainSize.Height - _viewport.Height) + _viewport.Y, _viewport.Width,
+            _gl.Viewport(_viewport.X, /*(int) (_swapchainSize.Height - _viewport.Height) + */_viewport.Y, _viewport.Width,
                 _viewport.Height);
         }
     }

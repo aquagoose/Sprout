@@ -18,7 +18,7 @@ internal sealed unsafe class D3D11Renderable : Renderable
 {
     public override bool IsDisposed { get; protected set; }
 
-    private readonly ID3D11DeviceContext* _context;
+    private readonly D3D11GraphicsDevice _device;
     private readonly D3D11Shader _shader;
     private readonly bool _isDynamic;
 
@@ -30,11 +30,13 @@ internal sealed unsafe class D3D11Renderable : Renderable
     private readonly uint _numElements;
     private readonly Dictionary<uint, DXUniform>? _uniforms;
 
-    public D3D11Renderable(ID3D11Device* device, ID3D11DeviceContext* context, ref readonly RenderableInfo info)
+    public D3D11Renderable(D3D11GraphicsDevice device, ref readonly RenderableInfo info)
     {
-        _context = context;
+        _device = device;
         _shader = (D3D11Shader) info.Shader;
         _isDynamic = info.Dynamic;
+
+        ID3D11Device* d3dDevice = device.Device;
 
         if (info.NumVertices > 0)
         {
@@ -49,7 +51,7 @@ internal sealed unsafe class D3D11Renderable : Renderable
             };
 
             fixed (ID3D11Buffer** vertexBuffer = &_vertexBuffer)
-                device->CreateBuffer(&bufferDesc, null, vertexBuffer).Check("Create vertex buffer");
+                d3dDevice->CreateBuffer(&bufferDesc, null, vertexBuffer).Check("Create vertex buffer");
 
             _numElements = info.NumVertices;
             _stride = info.VertexSize;
@@ -68,7 +70,7 @@ internal sealed unsafe class D3D11Renderable : Renderable
             };
 
             fixed (ID3D11Buffer** indexBuffer = &_indexBuffer)
-                device->CreateBuffer(&bufferDesc, null, indexBuffer).Check("Create index buffer");
+                d3dDevice->CreateBuffer(&bufferDesc, null, indexBuffer).Check("Create index buffer");
 
             _numElements = info.NumIndices;
         }
@@ -106,7 +108,7 @@ internal sealed unsafe class D3D11Renderable : Renderable
             fixed (byte* pVertexSource = _shader.VertexShaderSource)
             fixed (ID3D11InputLayout** inputLayout = &_inputLayout)
             {
-                device->CreateInputLayout(inputElements, (uint) info.VertexInput.Length, pVertexSource,
+                d3dDevice->CreateInputLayout(inputElements, (uint) info.VertexInput.Length, pVertexSource,
                     (nuint) _shader.VertexShaderSource.Length, inputLayout).Check("Create input layout");
             }
         }
@@ -132,7 +134,7 @@ internal sealed unsafe class D3D11Renderable : Renderable
                         };
 
                         ID3D11Buffer* cbuffer;
-                        device->CreateBuffer(&cbufferDesc, null, &cbuffer).Check("Create constant buffer");
+                        d3dDevice->CreateBuffer(&cbufferDesc, null, &cbuffer).Check("Create constant buffer");
 
                         dxUniform = new DXUniform(UniformType.ConstantBuffer, uniform.ConstantBufferSize, cbuffer);
                         break;
@@ -161,7 +163,7 @@ internal sealed unsafe class D3D11Renderable : Renderable
         UpdateBuffer(_indexBuffer, offset, indices);
     }
     
-    public override unsafe void PushUniformData(uint index, uint offset, uint sizeInBytes, void* pData)
+    public override void PushUniformData(uint index, uint offset, uint sizeInBytes, void* pData)
     {
         if (!(_uniforms?.TryGetValue(index, out DXUniform uniform) ?? false))
             throw new Exception("Invalid uniform index!");
@@ -169,16 +171,18 @@ internal sealed unsafe class D3D11Renderable : Renderable
         Debug.Assert(uniform.Type == UniformType.ConstantBuffer, "Uniform index is not a Constant Buffer uniform");
         Debug.Assert(offset + sizeInBytes >= uniform.ConstantBufferSize);
 
+        ID3D11DeviceContext* context = _device.Context;
+        
         D3D11_MAPPED_SUBRESOURCE subresource;
-        _context->Map((ID3D11Resource*) uniform.ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource)
+        context->Map((ID3D11Resource*) uniform.ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource)
             .Check("Map buffer");
 
         Unsafe.CopyBlock(subresource.pData, pData, sizeInBytes);
         
-        _context->Unmap((ID3D11Resource*) uniform.ConstantBuffer, 0);
+        context->Unmap((ID3D11Resource*) uniform.ConstantBuffer, 0);
 
         ID3D11Buffer* cbuffer = uniform.ConstantBuffer;
-        _context->VSSetConstantBuffers(index, 1, &cbuffer);
+        context->VSSetConstantBuffers(index, 1, &cbuffer);
     }
     
     public override void PushTexture(uint index, Texture texture)
@@ -186,9 +190,15 @@ internal sealed unsafe class D3D11Renderable : Renderable
         Debug.Assert((_uniforms?.TryGetValue(index, out DXUniform uniform) ?? false) && uniform.Type == UniformType.Texture,
             "Texture index is not valid or is not a texture uniform");
 
+        ID3D11DeviceContext* context = _device.Context;
+        
         D3D11Texture d3dTexture = (D3D11Texture) texture;
+        
+        ID3D11SamplerState* sampler = _device.GetSampler(d3dTexture.Sampler);
+        context->PSSetSamplers(index, 1, &sampler);
+        
         ID3D11ShaderResourceView* srv = d3dTexture.TextureSrv;
-        _context->PSSetShaderResources(index, 1, &srv);
+        context->PSSetShaderResources(index, 1, &srv);
     }
     
     public override void Draw()
@@ -198,31 +208,33 @@ internal sealed unsafe class D3D11Renderable : Renderable
     
     public override void Draw(uint numElements)
     {
-        _context->VSSetShader(_shader.VertexShader, null, 0);
-        _context->PSSetShader(_shader.PixelShader, null, 0);
+        ID3D11DeviceContext* context = _device.Context;
+        
+        context->VSSetShader(_shader.VertexShader, null, 0);
+        context->PSSetShader(_shader.PixelShader, null, 0);
 
-        _context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         if (_inputLayout != null)
         {
-            _context->IASetInputLayout(_inputLayout);
+            context->IASetInputLayout(_inputLayout);
 
             if (_vertexBuffer != null)
             {
                 ID3D11Buffer* vertexBuffer = _vertexBuffer;
                 uint stride = _stride;
                 uint offset = 0;
-                _context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+                context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
             }
 
             if (_indexBuffer != null)
-                _context->IASetIndexBuffer(_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+                context->IASetIndexBuffer(_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
         }
 
         if (_indexBuffer != null)
-            _context->DrawIndexed(numElements, 0, 0);
+            context->DrawIndexed(numElements, 0, 0);
         else
-            _context->Draw(numElements, 0);
+            context->Draw(numElements, 0);
     }
     
     public override void Dispose()
@@ -243,6 +255,8 @@ internal sealed unsafe class D3D11Renderable : Renderable
 
     private void UpdateBuffer<T>(ID3D11Buffer* buffer, uint offset, ReadOnlySpan<T> data) where T : unmanaged
     {
+        ID3D11DeviceContext* context = _device.Context;
+        
         uint sizeInBytes = (uint) (data.Length * sizeof(T));
         
         if (_isDynamic)
@@ -251,19 +265,19 @@ internal sealed unsafe class D3D11Renderable : Renderable
                 "Offsets greater than 0 are not yet supported for dynamic renderables in the D3D11 backend");
 
             D3D11_MAPPED_SUBRESOURCE subresource;
-            _context->Map((ID3D11Resource*) buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource)
+            context->Map((ID3D11Resource*) buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource)
                 .Check("Map buffer");
 
             fixed (void* pData = data)
                 Unsafe.CopyBlock(subresource.pData, pData, sizeInBytes);
 
-            _context->Unmap((ID3D11Resource*) buffer, 0);
+            context->Unmap((ID3D11Resource*) buffer, 0);
         }
         else
         {
             D3D11_BOX box = new D3D11_BOX((int) offset, 0, 0, (int) (offset + sizeInBytes), 1, 1);
             fixed (void* pData = data)
-                _context->UpdateSubresource((ID3D11Resource*) buffer, 0, &box, pData, 0, 0);
+                context->UpdateSubresource((ID3D11Resource*) buffer, 0, &box, pData, 0, 0);
         }
     }
 

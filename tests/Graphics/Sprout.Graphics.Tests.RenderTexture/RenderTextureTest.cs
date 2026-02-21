@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Numerics;
 using Sprout.Graphics.Tests.Base;
 
@@ -15,6 +16,7 @@ public class RenderTextureTest() : TestBase("Render Texture Test")
         _texture = Device.CreateTexture("DEBUG.png");
         _renderTexture =
             Device.CreateTexture(128, 128, PixelFormat.RGBA8, TextureUsage.RenderTexture | TextureUsage.Shader);
+        _renderTexture.Sampler = Sampler.Point;
     }
 
     protected override void Loop(float dt)
@@ -28,7 +30,7 @@ public class RenderTextureTest() : TestBase("Render Texture Test")
         Device.SetRenderTexture(null);
         Device.Clear(Color.Black);
         
-        _renderer.Draw(_renderTexture, new Vector2(0));
+        _renderer.Draw(_renderTexture, new Vector2(0), new Size(WindowWidth, WindowHeight));
         _renderer.Render();
         
         Device.Present();

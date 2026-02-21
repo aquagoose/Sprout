@@ -73,6 +73,13 @@ public static class CompileShaders
         {
             if (backend == Backend.Unknown)
                 continue;
+
+            if (backend == Backend.D3D11 && !OperatingSystem.IsWindows())
+            {
+                Console.WriteLine(
+                    "WARNING! Skipping D3D11 backend as shaders compiled for that backend MUST be compiled on Windows! (d3dcompiler_47.dll is not available on other platforms)");
+                continue;
+            }
     
             Console.WriteLine($"Compiling shader for {backend}");
             if (vtxEntry != null)

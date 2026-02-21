@@ -85,7 +85,10 @@ internal sealed unsafe class GLRenderable : Renderable
 
         if (info.Uniforms != null)
         {
+            _gl.UseProgram(_shader.Program);
+            
             _uniforms = new Dictionary<uint, GLUniform>(info.Uniforms.Length);
+            int currentTextureUnit = 0;
             for (int i = 0; i < info.Uniforms.Length; i++)
             {
                 ref readonly Uniform uniform = ref info.Uniforms[i];
@@ -103,13 +106,19 @@ internal sealed unsafe class GLRenderable : Renderable
                         uint index = _gl.GetUniformBlockIndex(_shader.Program, $"sp_Uniform_{uniform.Index}");
                         _gl.UniformBlockBinding(_shader.Program, index, uniform.Index);
 
-                        glUniform = new GLUniform(UniformType.ConstantBuffer, uniform.ConstantBufferSize, buffer);
+                        glUniform = new GLUniform(UniformType.ConstantBuffer, uniform.ConstantBufferSize, buffer, 0);
                         break;
                     }
                     
                     case UniformType.Texture:
                     {
-                        glUniform = new GLUniform(UniformType.Texture, 0, 0);
+                        int location = _gl.GetUniformLocation(_shader.Program, $"sp_Texture_{uniform.Index}");
+                        if (location == -1)
+                            throw new Exception("Internal error: Couldn't find texture uniform!");
+                        
+                        _gl.Uniform1(location, currentTextureUnit);
+                        glUniform = new GLUniform(UniformType.Texture, 0, 0, currentTextureUnit);
+                        currentTextureUnit++;
                         break;
                     }
                     
@@ -156,14 +165,16 @@ internal sealed unsafe class GLRenderable : Renderable
 
     public override void PushTexture(uint index, Texture texture)
     {
-        Debug.Assert((_uniforms?.TryGetValue(index, out GLUniform uniform) ?? false) && uniform.Type == UniformType.Texture,
-            "Texture index is not valid or is not a texture uniform!");
+        if (!(_uniforms?.TryGetValue(index, out GLUniform uniform) ?? false))
+            throw new Exception("Invalid uniform index!");
+        
+        Debug.Assert(uniform.Type == UniformType.Texture, "Texture index is not a Texture uniform!");
         Debug.Assert((texture.Usage & TextureUsage.Shader) != 0, "Texture was not created with the 'Shader' usage flag!");
      
         _gl.BindVertexArray(_vao);
         
         GLTexture glTexture = (GLTexture) texture;
-        _gl.ActiveTexture(TextureUnit.Texture0 + (int) index);
+        _gl.ActiveTexture(TextureUnit.Texture0 + uniform.TextureUnit);
         _gl.BindTexture(TextureTarget.Texture2D, glTexture.Texture);
     }
 
@@ -200,11 +211,14 @@ internal sealed unsafe class GLRenderable : Renderable
         
         public readonly uint UniformBuffer;
 
-        public GLUniform(UniformType type, uint uniformBufferSize, uint uniformBuffer)
+        public readonly int TextureUnit;
+
+        public GLUniform(UniformType type, uint uniformBufferSize, uint uniformBuffer, int textureUnit)
         {
             Type = type;
             UniformBufferSize = uniformBufferSize;
             UniformBuffer = uniformBuffer;
+            TextureUnit = textureUnit;
         }
     }
 }

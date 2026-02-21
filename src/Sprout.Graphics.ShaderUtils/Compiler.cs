@@ -264,7 +264,7 @@ public static class Compiler
             fixed (byte* pOut = output)
                 Unsafe.CopyBlock(pOut, pOutput, (uint) output.Length);
             
-            Console.WriteLine(Encoding.UTF8.GetString(output));
+            //Console.WriteLine(Encoding.UTF8.GetString(output));
 
             return output;
         }

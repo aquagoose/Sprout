@@ -15,7 +15,8 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
     private readonly Dictionary<int, uint> _framebuffers;
 
     private Size _swapchainSize;
-    private Viewport _viewport;
+    
+    public bool HasRenderTextureSet;
     
     public override Backend Backend => Backend.OpenGL;
 
@@ -23,12 +24,19 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
 
     public override Viewport Viewport
     {
-        get => _viewport;
+        get => field;
         set
         {
-            _viewport = value;
-            _gl.Viewport(_viewport.X, /*(int) (_swapchainSize.Height - _viewport.Height) + */_viewport.Y, _viewport.Width,
-                _viewport.Height);
+            field = value;
+            
+            // OpenGL framebuffers are upside down for SOME reason
+            // Anyway this makes it a complete pain in the arse to work with them.
+            // Viewports in OpenGL start at the bottom left, whereas we want them to be the top left, so we must "flip"
+            // the viewport to be at the top left.
+            // HOWEVER if we're rendering to a framebuffer then we don't want to do this!
+            // Hence why we only flip the viewport if the render texture is NOT set.
+            int yOffset = HasRenderTextureSet ? 0 : (int) (_swapchainSize.Height - value.Height);
+            _gl.Viewport(value.X, yOffset + value.Y, value.Width, value.Height);
         }
     }
 
@@ -63,7 +71,7 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
 
     public override Renderable CreateRenderable(in RenderableInfo info)
     {
-        return new GLRenderable(_gl, in info);
+        return new GLRenderable(_gl, this, in info);
     }
 
     public override void SetRenderTextures(ReadOnlySpan<Texture> colorTextures)
@@ -73,6 +81,7 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         if (colorTextures.Length == 0)
         {
             _gl.BindFramebuffer(fbTarget, 0);
+            HasRenderTextureSet = false;
             Viewport = new Viewport(0, 0, (uint) _swapchainSize.Width, (uint) _swapchainSize.Height);
             return;
         }
@@ -110,6 +119,7 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         }
         
         _gl.BindFramebuffer(FramebufferTarget.DrawFramebuffer, framebuffer);
+        HasRenderTextureSet = true;
         Viewport = new Viewport(0, 0, (uint) colorTextures[0].Size.Width, (uint) colorTextures[0].Size.Height);
     }
 

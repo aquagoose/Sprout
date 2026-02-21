@@ -259,14 +259,25 @@ public static class Compiler
             
             byte* pOutput;
             CheckResult(_spirv.CompilerCompile(compiler, &pOutput), "Compile");
-
-            byte[] output = new byte[strlen(pOutput)];
-            fixed (byte* pOut = output)
-                Unsafe.CopyBlock(pOut, pOutput, (uint) output.Length);
             
-            //Console.WriteLine(Encoding.UTF8.GetString(output));
+            string output = new string((sbyte*) pOutput);
 
-            return output;
+            // Modify the shader to flip the gl_Position by a vertex multiplier.
+            // This is used when rendering offscreen to flip the vertices.
+            // This is quite cursed and I hate that I have to do this, but so be it.
+            int glPositionLoc = output.IndexOf("gl_Position", StringComparison.CurrentCulture);
+            if (glPositionLoc >= 0)
+            {
+                glPositionLoc = output.IndexOf('\n', glPositionLoc);
+                output = output.Insert(glPositionLoc + 1, "    gl_Position *= SP_VertexMultiplier;\n");
+                
+                int voidMainPos = output.IndexOf("void main", StringComparison.CurrentCulture);
+                if (voidMainPos < 0)
+                    throw new Exception("Couldn't find main function!");
+                output = output.Insert(voidMainPos, "uniform vec4 SP_VertexMultiplier;\n");
+            }
+            
+            return Encoding.UTF8.GetBytes(output);
         }
         finally
         {

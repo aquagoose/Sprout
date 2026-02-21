@@ -49,6 +49,8 @@ internal sealed unsafe class GLTexture : Texture
                 _ => throw new ArgumentOutOfRangeException()
             };
             
+            _gl.BindTexture(TextureTarget.Texture2D, Texture);
+            
             _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int) minFilter);
             _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int) magFilter);
             _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int) TextureWrapMode.Repeat);

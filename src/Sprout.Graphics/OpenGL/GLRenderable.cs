@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Numerics;
 using Silk.NET.OpenGL;
 
 namespace Sprout.Graphics.OpenGL;
@@ -8,6 +9,7 @@ internal sealed unsafe class GLRenderable : Renderable
     public override bool IsDisposed { get; protected set; }
 
     private readonly GL _gl;
+    private readonly GLGraphicsDevice _device;
     private readonly uint _vao;
     private readonly GLShader _shader;
 
@@ -18,9 +20,10 @@ internal sealed unsafe class GLRenderable : Renderable
 
     private readonly uint _numDraws;
     
-    public GLRenderable(GL gl, ref readonly RenderableInfo info)
+    public GLRenderable(GL gl, GLGraphicsDevice device, ref readonly RenderableInfo info)
     {
         _gl = gl;
+        _device = device;
         _shader = (GLShader) info.Shader;
 
         _vao = _gl.GenVertexArray();
@@ -185,6 +188,15 @@ internal sealed unsafe class GLRenderable : Renderable
     {
         _gl.BindVertexArray(_vao);
         _gl.UseProgram(_shader.Program);
+
+        int vertexMultiplierLocation = _gl.GetUniformLocation(_shader.Program, "SP_VertexMultiplier");
+        if (vertexMultiplierLocation < 0)
+            throw new Exception("Couldn't find a uniform named 'SP_VertexMultiplier' in the vertex shader!");
+        
+        Vector4 vertexMultiplier = Vector4.One;
+        if (_device.HasRenderTextureSet)
+            vertexMultiplier.Y = -1;
+        _gl.Uniform4(vertexMultiplierLocation, 1, &vertexMultiplier.X);
         
         if (_ebo == 0)
             _gl.DrawArrays(PrimitiveType.Triangles, 0, numElements);

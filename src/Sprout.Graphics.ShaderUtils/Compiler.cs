@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using Silk.NET.SPIRV;
 using Silk.NET.SPIRV.Cross;
 using TerraFX.Interop.DirectX;
@@ -243,10 +244,18 @@ public static class Compiler
                 _spirv.CompilerUnsetDecoration(compiler, reflectedResources[i].Id, Decoration.Binding);
                 _spirv.CompilerSetName(compiler, reflectedResources[i].BaseTypeId, $"sp_Uniform_{binding}");
             }
-
+            
             CheckResult(_spirv.CompilerBuildCombinedImageSamplers(compiler), "Build combined image samplers");
-            uint samplerId;
-            CheckResult(_spirv.CompilerBuildDummySamplerForCombinedImages(compiler, &samplerId), "Build dummy sampler");
+            CombinedImageSampler* combinedSamplers;
+            nuint numSamplers;
+            _spirv.CompilerGetCombinedImageSamplers(compiler, &combinedSamplers, &numSamplers);
+            for (uint i = 0; i < numSamplers; i++)
+            {
+                uint id = combinedSamplers[i].ImageId;
+                
+                uint binding = _spirv.CompilerGetDecoration(compiler, id, Decoration.Binding);
+                _spirv.CompilerSetName(compiler, combinedSamplers[i].CombinedId, $"sp_Texture_{binding}");
+            }
             
             byte* pOutput;
             CheckResult(_spirv.CompilerCompile(compiler, &pOutput), "Compile");
@@ -254,6 +263,8 @@ public static class Compiler
             byte[] output = new byte[strlen(pOutput)];
             fixed (byte* pOut = output)
                 Unsafe.CopyBlock(pOut, pOutput, (uint) output.Length);
+            
+            Console.WriteLine(Encoding.UTF8.GetString(output));
 
             return output;
         }

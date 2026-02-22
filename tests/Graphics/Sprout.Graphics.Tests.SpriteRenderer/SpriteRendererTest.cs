@@ -55,7 +55,7 @@ public sealed class SpriteRendererTest() : TestBase("Sprite Renderer Test")
         // Test the various flipping modes, and to check that flipping with a source rectangle only flips the visible
         // sprite, and not the whole sprite sheet.
         int xSize = 70;
-        int yPos = WindowHeight - 100;
+        int yPos = WindowSize.Height - 100;
         // Test X flipping. The text "Flip X" should be at the correct orientation,
         // and the sprite should show only the (0,64) box.
         _renderer.Draw(_texture, new Vector2(0, yPos), new Rectangle(64, 0, 64, 64), flip: SpriteFlip.FlipX);

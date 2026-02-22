@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using SDL3;
@@ -7,13 +8,19 @@ namespace Sprout.Graphics.Tests.Base;
 
 public abstract class TestBase(string testName) : IDisposable
 {
-    public const int WindowWidth = 800;
-    public const int WindowHeight = 600;
-    
     private IntPtr _window;
     private bool _alive;
 
     protected GraphicsDevice Device;
+
+    protected Size WindowSize
+    {
+        get
+        {
+            SDL.GetWindowSizeInPixels(_window, out int w, out int h);
+            return new Size(w, h);
+        }
+    }
 
     protected virtual void Load() { }
 
@@ -58,7 +65,7 @@ public abstract class TestBase(string testName) : IDisposable
             backend = (Backend) buttonId;
         }
 
-        SDL.WindowFlags flags = 0;
+        SDL.WindowFlags flags = SDL.WindowFlags.Resizable;
 
         switch (backend)
         {
@@ -83,7 +90,7 @@ public abstract class TestBase(string testName) : IDisposable
 
         string appName = $"{testName} ({backend})";
         SDL.SetAppMetadata(appName, "1.0.0", "");
-        _window = SDL.CreateWindow(appName, WindowWidth, WindowHeight, flags);
+        _window = SDL.CreateWindow(appName, 800, 600, flags);
         if (_window == 0)
             throw new Exception($"Failed to create SDL window: {SDL.GetError()}");
 
@@ -102,6 +109,11 @@ public abstract class TestBase(string testName) : IDisposable
                     case SDL.EventType.WindowCloseRequested:
                     case SDL.EventType.Quit:
                         _alive = false;
+                        break;
+                    
+                    case SDL.EventType.WindowResized:
+                        Size size = WindowSize;
+                        Device.ResizeSwapchain((uint) size.Width, (uint) size.Height);
                         break;
                 }
             }

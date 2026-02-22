@@ -92,6 +92,13 @@ public abstract class GraphicsDevice : IDisposable
     public abstract void Present();
 
     /// <summary>
+    /// Resize the swapchain.
+    /// </summary>
+    /// <param name="width">The new width.</param>
+    /// <param name="height">The new height.</param>
+    public abstract void ResizeSwapchain(uint width, uint height);
+
+    /// <summary>
     /// Dispose of this <see cref="GraphicsDevice"/>.
     /// </summary>
     public abstract void Dispose();

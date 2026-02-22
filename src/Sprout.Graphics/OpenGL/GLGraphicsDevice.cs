@@ -135,6 +135,11 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         SDL.GLSwapWindow(_sdlWindow);
     }
 
+    public override void ResizeSwapchain(uint width, uint height)
+    {
+        _swapchainSize = new Size((int) width, (int) height);
+    }
+
     public override void Dispose()
     {
         if (IsDisposed)

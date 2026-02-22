@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Drawing;
+using System.Numerics;
 using Sprout.Graphics.Tests.Base;
 
 namespace Sprout.Graphics.Tests.SpritePerformance;
@@ -23,10 +24,11 @@ public class SpritePerformanceTest() : TestBase("Sprite Renderer Performance Tes
         
         Device.Clear(Color.Black);
 
+        Size windowSize = WindowSize;
         float h = _value;
-        for (int y = 0; y < WindowHeight; y++)
+        for (int y = 0; y < windowSize.Height; y++)
         {
-            for (int x = 0; x < WindowWidth; x++)
+            for (int x = 0; x < windowSize.Width; x++)
             {
                 _renderer.Draw(_white, new Vector2(x, y), tint: Color.FromHSV(h, 1, 1));
                 h += 0.0001f;

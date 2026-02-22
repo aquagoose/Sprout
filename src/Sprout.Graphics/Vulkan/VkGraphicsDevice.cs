@@ -169,6 +169,11 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         NextFrame();
     }
 
+    public override void ResizeSwapchain(uint width, uint height)
+    {
+        throw new NotImplementedException();
+    }
+
     public void CopyToBuffer(VkBuffer buffer, uint offset, uint size, void* pData)
     {
         if (_bufferOffset >= 64 * 1024 * 1024)

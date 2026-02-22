@@ -136,6 +136,11 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         _swapChain->Present(1, 0);
     }
 
+    public override void ResizeSwapchain(uint width, uint height)
+    {
+        throw new NotImplementedException();
+    }
+
     public ID3D11SamplerState* GetSampler(Sampler sampler)
     {
         if (_samplers.TryGetValue(sampler, out D3D11Sampler d3dSampler))

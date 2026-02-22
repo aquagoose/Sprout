@@ -12,7 +12,9 @@ public abstract class App : IDisposable
     private GraphicsDevice _device = null!;
     private bool _alive;
 
-    public GraphicsDevice GraphicsDevice => _device;
+    public Window Window => _window;
+
+    public GraphicsDevice Device => _device;
 
     public Input Input => _input;
 

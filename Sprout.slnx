@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Sprout.EntitySystem/Sprout.EntitySystem.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Sprout.Tests.TestGame/Sprout.Tests.TestGame.csproj" />
     <Project Path="tests/Sprout.Tests.WindowAndEvents/Sprout.Tests.WindowAndEvents.csproj" />

@@ -47,6 +47,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     
     public readonly Device Device;
     public readonly Allocator* Allocator;
+    public readonly KhrPushDescriptor KhrPushDescriptor;
 
     private readonly Dictionary<Sampler, VkSampler> _samplerCache;
 
@@ -84,6 +85,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         
         if (!_vk.TryGetDeviceExtension(_instance, Device, out _khrSwapchain))
             throw new Exception("Failed to get KhrSwapchain extension!");
+        if (!_vk.TryGetDeviceExtension(_instance, Device, out KhrPushDescriptor))
+            throw new Exception("Failed to get KhrPushDescriptor extension!");
         
         _swapchain = VkHelper.CreateSwapchain(_khrSwapchain, _physicalDevice, Device, in _queues, _surface,
             _khrSurface, sdlWindow, new SwapchainKHR(), out Format format, out _swapchainSize);

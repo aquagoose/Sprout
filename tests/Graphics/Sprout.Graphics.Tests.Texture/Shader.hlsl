@@ -13,10 +13,10 @@ struct VSOutput
 Texture2D Texture : register(t0);
 SamplerState Sampler : register(s0);
 
-cbuffer TransformBuffer : register(b1)
+/*cbuffer TransformBuffer : register(b1)
 {
     float4x4 Transform;
-}
+}*/
 
 VSOutput VSMain(const in VSInput input)
 {

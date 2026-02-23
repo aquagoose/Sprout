@@ -143,8 +143,7 @@ internal static unsafe class VkHelper
 
     public static Device CreateDevice(Vk vk, PhysicalDevice physicalDevice, ref Queues queues)
     {
-        using VkStringArray extensions = new(KhrSwapchain.ExtensionName);
-        Console.WriteLine(new string((sbyte*) ((byte**) extensions.Handle)[0]));
+        using VkStringArray extensions = new(KhrSwapchain.ExtensionName, KhrPushDescriptor.ExtensionName);
         
         HashSet<uint> uniqueQueues = queues.UniqueFamilies;
         int numUniqueQueues = uniqueQueues.Count;

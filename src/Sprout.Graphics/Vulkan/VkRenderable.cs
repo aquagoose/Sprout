@@ -14,8 +14,8 @@ internal sealed unsafe class VkRenderable : Renderable
     private readonly VkGraphicsDevice _device;
 
     private readonly DescriptorSetLayout _descriptorLayout;
-    private readonly DescriptorPool _descriptorPool;
-    private readonly DescriptorSet _descriptorSet;
+    //private readonly DescriptorPool _descriptorPool;
+    //private readonly DescriptorSet _descriptorSet;
 
     private readonly PipelineLayout _layout;
     private readonly Pipeline _pipeline;
@@ -43,15 +43,17 @@ internal sealed unsafe class VkRenderable : Renderable
                 {
                     Binding = uniform.Index,
                     DescriptorType = uniform.Type.ToVk(),
-                    DescriptorCount = 1
+                    DescriptorCount = 1,
+                    StageFlags = ShaderStageFlags.VertexBit | ShaderStageFlags.FragmentBit
                 };
             }
 
             DescriptorSetLayoutCreateInfo descriptorLayoutInfo = new()
             {
                 SType = StructureType.DescriptorSetLayoutCreateInfo,
+                Flags = DescriptorSetLayoutCreateFlags.PushDescriptorBit,
                 BindingCount = (uint) numUniforms,
-                PBindings = bindings
+                PBindings = bindings,
             };
             
             _vk.CreateDescriptorSetLayout(_device.Device, &descriptorLayoutInfo, null, out _descriptorLayout)
@@ -67,7 +69,7 @@ internal sealed unsafe class VkRenderable : Renderable
                 };
             }
             
-            DescriptorPoolCreateInfo descriptorPoolInfo = new()
+            /*DescriptorPoolCreateInfo descriptorPoolInfo = new()
             {
                 SType = StructureType.DescriptorPoolCreateInfo,
                 
@@ -88,7 +90,7 @@ internal sealed unsafe class VkRenderable : Renderable
             };
 
             _vk.AllocateDescriptorSets(_device.Device, &setAllocateInfo, out _descriptorSet)
-                .Check("Create descriptor set");
+                .Check("Create descriptor set");*/
         }
 
         VkShader shader = (VkShader) info.Shader;
@@ -305,7 +307,8 @@ internal sealed unsafe class VkRenderable : Renderable
         DescriptorImageInfo imageInfo = new()
         {
             ImageView = vkTexture.ImageView,
-            Sampler = _device.GetSampler(texture.Sampler)
+            Sampler = _device.GetSampler(texture.Sampler),
+            ImageLayout = ImageLayout.ShaderReadOnlyOptimal
         };
 
         WriteDescriptorSet writeDescriptor = new()
@@ -314,11 +317,14 @@ internal sealed unsafe class VkRenderable : Renderable
             DescriptorType = DescriptorType.CombinedImageSampler,
             DstBinding = index,
             DescriptorCount = 1,
-            DstSet = _descriptorSet,
+            //DstSet = _descriptorSet,
             PImageInfo = &imageInfo
         };
-        
-        _vk.UpdateDescriptorSets(_device.Device, 1, &writeDescriptor, null);
+
+        _device.KhrPushDescriptor.CmdPushDescriptorSet(_device.CurrentCommandBuffer, PipelineBindPoint.Graphics,
+            _layout, 0, 1, &writeDescriptor);
+
+        //_vk.UpdateDescriptorSets(_device.Device, 1, &writeDescriptor, null);
     }
     
     public override void Draw()

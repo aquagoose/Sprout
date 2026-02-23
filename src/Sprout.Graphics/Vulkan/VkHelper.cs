@@ -294,7 +294,7 @@ internal static unsafe class VkHelper
         return images;
     }
 
-    public static Image CreateImage(Vk vk, Device device, uint width, uint height, Format format, ImageUsageFlags usage)
+    public static VkImage CreateImage(Allocator* allocator, uint width, uint height, Format format, ImageUsageFlags usage)
     {
         ImageCreateInfo imageInfo = new()
         {
@@ -309,10 +309,17 @@ internal static unsafe class VkHelper
             Samples = SampleCountFlags.Count1Bit,
         };
 
-        Image image;
-        vk.CreateImage(device, &imageInfo, null, &image).Check("Create image");
+        AllocationCreateInfo allocatorInfo = new()
+        {
+            usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+            flags = 0
+        };
 
-        return image;
+        Image image;
+        Allocation* allocation;
+        vmaCreateImage(allocator, &imageInfo, &allocatorInfo, &image, &allocation, null).Check("Create image");
+
+        return new VkImage(image, allocation);
     }
 
     public static ImageView CreateImageView(Vk vk, Device device, Image image, Format format)

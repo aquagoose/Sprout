@@ -1,5 +1,6 @@
 using System.Drawing;
 using Silk.NET.Vulkan;
+using static Sprout.Graphics.Vulkan.VMA.Vma;
 
 namespace Sprout.Graphics.Vulkan;
 
@@ -12,7 +13,7 @@ internal sealed unsafe class VkTexture : Texture
     
     public override Sampler Sampler { get; set; }
 
-    public readonly Image Image;
+    public readonly VkImage Image;
 
     public readonly ImageView ImageView;
     
@@ -28,16 +29,16 @@ internal sealed unsafe class VkTexture : Texture
             _ => throw new ArgumentOutOfRangeException(nameof(format), format, null)
         };
 
-        ImageUsageFlags usageFlags = 0;
+        ImageUsageFlags usageFlags = ImageUsageFlags.TransferDstBit;
         if ((usage & TextureUsage.Shader) != 0)
             usageFlags |= ImageUsageFlags.SampledBit;
         if ((usage & TextureUsage.RenderTexture) != 0)
             usageFlags |= ImageUsageFlags.ColorAttachmentBit;
 
-        Image = VkHelper.CreateImage(vk, _device.Device, width, height, vkFormat, usageFlags);
-        ImageView = VkHelper.CreateImageView(vk, _device.Device, Image, vkFormat);
+        Image = VkHelper.CreateImage(_device.Allocator, width, height, vkFormat, usageFlags);
+        ImageView = VkHelper.CreateImageView(vk, _device.Device, Image.Image, vkFormat);
         
-        _device.CopyToTexture(Image, Size, bytesPerPixel, pData);
+        _device.CopyToTexture(Image.Image, Size, bytesPerPixel, pData);
     }
     
     public override void Dispose()
@@ -47,6 +48,6 @@ internal sealed unsafe class VkTexture : Texture
         IsDisposed = true;
         
         _vk.DestroyImageView(_device.Device, ImageView, null);
-        _vk.DestroyImage(_device.Device, Image, null);
+        vmaDestroyImage(_device.Allocator, Image.Image, Image.Allocation);
     }
 }

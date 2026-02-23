@@ -22,7 +22,8 @@ VSOutput VSMain(const in VSInput input)
 {
     VSOutput output;
     
-    output.Position = mul(Transform, float4(input.Position, 0.0, 1.0));
+    //output.Position = mul(Transform, float4(input.Position, 0.0, 1.0));
+    output.Position = float4(input.Position, 0.0, 1.0);
     output.TexCoord = input.TexCoord;
     
     return output;

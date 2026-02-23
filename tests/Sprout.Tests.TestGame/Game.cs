@@ -11,8 +11,8 @@ public class Game : App
     
     protected override void Initialize()
     {
-        _spriteRenderer = new SpriteRenderer(GraphicsDevice);
-        _texture = GraphicsDevice.CreateTexture("Content/BAGELMIP.png");
+        _spriteRenderer = new SpriteRenderer(Device);
+        _texture = Device.CreateTexture("Content/BAGELMIP.png");
     }
 
     protected override void Update(float dt)
@@ -31,7 +31,7 @@ public class Game : App
 
     protected override void Draw()
     {
-        GraphicsDevice.Clear(Color.CornflowerBlue);
+        Device.Clear(Color.CornflowerBlue);
         
         _spriteRenderer.Draw(_texture, _position);
         _spriteRenderer.Render();

@@ -8,12 +8,14 @@ using static Sprout.Graphics.Vulkan.VMA.Vma;
 using Image = Silk.NET.Vulkan.Image;
 using Semaphore = Silk.NET.Vulkan.Semaphore;
 using VkViewport = Silk.NET.Vulkan.Viewport;
+using VkSampler = Silk.NET.Vulkan.Sampler;
 
 namespace Sprout.Graphics.Vulkan;
 
 internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
 {
     private const uint FramesInFlight = 3;
+    private const uint TransferBufferSize = 64 * 1024 * 1024;
     
     public override bool IsDisposed { get; protected set; }
 
@@ -46,6 +48,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     public readonly Device Device;
     public readonly Allocator* Allocator;
 
+    private readonly Dictionary<Sampler, VkSampler> _samplerCache;
+
     public CommandBuffer CurrentCommandBuffer => _commandBuffers[_currentFrameInFlight];
 
     public Semaphore CurrentSemaphore => _semaphores[_currentFrameInFlight];
@@ -61,6 +65,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         _vk = Vk.GetApi();
         _window = sdlWindow;
         _instance = VkHelper.CreateInstance(_vk, AppDomain.CurrentDomain.FriendlyName);
+        _samplerCache = [];
         
         if (!_vk.TryGetInstanceExtension(_instance, out _khrSurface))
             throw new Exception("Failed to get KhrSurface extension!");
@@ -75,7 +80,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         Allocator = VkHelper.CreateAllocator(_instance, _physicalDevice, Device, GetInstanceProcAddress,
             GetDeviceProcAddress);
 
-        _transferBuffer = VkHelper.CreateBuffer(Allocator, BufferUsageFlags.TransferSrcBit, 64 * 1024 * 1024, true);
+        _transferBuffer = VkHelper.CreateBuffer(Allocator, BufferUsageFlags.TransferSrcBit, TransferBufferSize, true);
         
         if (!_vk.TryGetDeviceExtension(_instance, Device, out _khrSwapchain))
             throw new Exception("Failed to get KhrSwapchain extension!");
@@ -102,7 +107,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     
     protected override Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage, void* data)
     {
-        throw new NotImplementedException();
+        return new VkTexture(_vk, this, width, height, format, usage, data);
     }
     
     public override Renderable CreateRenderable(in RenderableInfo info)
@@ -119,7 +124,9 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     {
         Image image = _swapchainImages[_currentImage];
         VkHelper.TransitionImage(_vk, CurrentCommandBuffer, image, ImageLayout.Undefined,
-            ImageLayout.ColorAttachmentOptimal);
+            ImageLayout.ColorAttachmentOptimal, PipelineStageFlags.ColorAttachmentOutputBit,
+            PipelineStageFlags.ColorAttachmentOutputBit, AccessFlags.ColorAttachmentReadBit,
+            AccessFlags.ColorAttachmentReadBit);
 
         VkHelper.BeginRendering(_vk, CurrentCommandBuffer, [_swapchainImageViews[_currentImage]],
             new ClearColorValue(color.R, color.G, color.B, color.A), _swapchainSize);
@@ -139,7 +146,9 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         VkHelper.EndRendering(_vk, CurrentCommandBuffer);
 
         VkHelper.TransitionImage(_vk, CurrentCommandBuffer, image, ImageLayout.ColorAttachmentOptimal,
-            ImageLayout.PresentSrcKhr);
+            ImageLayout.PresentSrcKhr, PipelineStageFlags.ColorAttachmentOutputBit,
+            PipelineStageFlags.ColorAttachmentOutputBit, AccessFlags.ColorAttachmentReadBit,
+            AccessFlags.ColorAttachmentReadBit);
         
         VkHelper.ExecuteCommandBuffer(_vk, CurrentCommandBuffer, in _queues, null, semaphore);
 
@@ -176,7 +185,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
 
     public void CopyToBuffer(VkBuffer buffer, uint offset, uint size, void* pData)
     {
-        if (_bufferOffset >= 64 * 1024 * 1024)
+        if (_bufferOffset + size >= TransferBufferSize)
             throw new NotImplementedException("Buffer offset too high and resizing hasn't been implemented yet!");
         
         // TODO: Persistently mapped buffers
@@ -194,6 +203,66 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         
         _vk.CmdCopyBuffer(CurrentCommandBuffer, _transferBuffer.Buffer, buffer.Buffer, 1, &copy);
         _bufferOffset += size;
+    }
+
+    public void CopyToTexture(Image image, Size textureSize, uint bpp, void* pData)
+    {
+        uint totalSize = (uint) (textureSize.Width * textureSize.Height * bpp);
+        
+        if (_bufferOffset + totalSize >= TransferBufferSize)
+            throw new NotImplementedException("Buffer offset too high and resizing hasn't been implemented yet!");
+        
+        // TODO: Persistently mapped buffers
+        void* mappedData;
+        vmaMapMemory(Allocator, _transferBuffer.Allocation, &mappedData).Check("Map memory");
+        Unsafe.CopyBlock((byte*) mappedData + _bufferOffset, pData, totalSize);
+        vmaUnmapMemory(Allocator, _transferBuffer.Allocation);
+
+        BufferImageCopy imageCopy = new()
+        {
+            BufferOffset = _bufferOffset,
+            ImageExtent = new Extent3D() { Width = (uint) textureSize.Width, Height = (uint) textureSize.Height },
+            ImageSubresource = new ImageSubresourceLayers
+            {
+                AspectMask = ImageAspectFlags.ColorBit,
+                LayerCount = 1,
+                BaseArrayLayer = 0,
+                MipLevel = 0
+            }
+        };
+
+        VkHelper.TransitionImage(_vk, CurrentCommandBuffer, image, ImageLayout.Undefined,
+            ImageLayout.TransferDstOptimal, PipelineStageFlags.TopOfPipeBit, PipelineStageFlags.TransferBit,
+            AccessFlags.None, AccessFlags.TransferWriteBit);
+        
+        _vk.CmdCopyBufferToImage(CurrentCommandBuffer, _transferBuffer.Buffer, image,
+            ImageLayout.TransferDstOptimal, 1, &imageCopy);
+
+        VkHelper.TransitionImage(_vk, CurrentCommandBuffer, image, ImageLayout.TransferDstOptimal,
+            ImageLayout.ShaderReadOnlyOptimal, PipelineStageFlags.TransferBit, PipelineStageFlags.FragmentShaderBit,
+            AccessFlags.TransferWriteBit, AccessFlags.ShaderReadBit);
+    }
+
+    public VkSampler GetSampler(Sampler sampler)
+    {
+        if (_samplerCache.TryGetValue(sampler, out VkSampler vkSampler))
+            return vkSampler;
+
+        SamplerCreateInfo samplerInfo = new()
+        {
+            SType = StructureType.SamplerCreateInfo,
+            MinFilter = sampler.MinFilter.ToVk(),
+            MagFilter = sampler.MagFilter.ToVk(),
+            MipmapMode = (SamplerMipmapMode) sampler.MipFilter.ToVk(),
+            AddressModeU = SamplerAddressMode.Repeat,
+            AddressModeV = SamplerAddressMode.Repeat,
+            MinLod = 0,
+            MaxLod = float.MaxValue
+        };
+
+        _vk.CreateSampler(Device, &samplerInfo, null, &vkSampler).Check("Create sampler");
+        _samplerCache.Add(sampler, vkSampler);
+        return vkSampler;
     }
     
     public override void Dispose()

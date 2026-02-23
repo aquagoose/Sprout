@@ -1,3 +1,4 @@
+global using VkFilter = Silk.NET.Vulkan.Filter;
 using SDL3;
 using Silk.NET.Core;
 using Silk.NET.Core.Native;
@@ -21,6 +22,26 @@ internal static unsafe class VkHelper
     {
         if (result != Result.Success)
             throw new Exception($"Vulkan operation '{operation}' failed: {result}");
+    }
+
+    public static VkFilter ToVk(this Filter filter)
+    {
+        return filter switch
+        {
+            Filter.Linear => VkFilter.Linear,
+            Filter.Point => VkFilter.Nearest,
+            _ => throw new ArgumentOutOfRangeException(nameof(filter), filter, null)
+        };
+    }
+
+    public static DescriptorType ToVk(this UniformType type)
+    {
+        return type switch
+        {
+            UniformType.ConstantBuffer => DescriptorType.UniformBuffer,
+            UniformType.Texture => DescriptorType.CombinedImageSampler,
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+        };
     }
     
     public static Instance CreateInstance(Vk vk, string appName)
@@ -273,6 +294,27 @@ internal static unsafe class VkHelper
         return images;
     }
 
+    public static Image CreateImage(Vk vk, Device device, uint width, uint height, Format format, ImageUsageFlags usage)
+    {
+        ImageCreateInfo imageInfo = new()
+        {
+            SType = StructureType.ImageCreateInfo,
+            ImageType = ImageType.Type2D,
+            Extent = new Extent3D { Width = width, Height = height, Depth = 1 },
+            Format = format,
+            Usage = usage,
+            ArrayLayers = 1,
+            MipLevels = 1, // TODO: Calculate mip levels
+            InitialLayout = ImageLayout.Undefined,
+            Samples = SampleCountFlags.Count1Bit,
+        };
+
+        Image image;
+        vk.CreateImage(device, &imageInfo, null, &image).Check("Create image");
+
+        return image;
+    }
+
     public static ImageView CreateImageView(Vk vk, Device device, Image image, Format format)
     {
         ImageViewCreateInfo imageViewInfo = new()
@@ -477,7 +519,8 @@ internal static unsafe class VkHelper
         vk.CmdEndRendering(cb);
     }
 
-    public static void TransitionImage(Vk vk, CommandBuffer cb, Image image, ImageLayout old, ImageLayout @new)
+    public static void TransitionImage(Vk vk, CommandBuffer cb, Image image, ImageLayout old, ImageLayout @new,
+        PipelineStageFlags srcStage, PipelineStageFlags dstStage, AccessFlags srcAccessMask, AccessFlags dstAccessMask)
     {
         ImageMemoryBarrier imageBarrier = new()
         {
@@ -485,8 +528,8 @@ internal static unsafe class VkHelper
             Image = image,
             OldLayout = old,
             NewLayout = @new,
-            SrcAccessMask = AccessFlags.ColorAttachmentReadBit,
-            DstAccessMask = AccessFlags.ColorAttachmentReadBit,
+            SrcAccessMask = srcAccessMask,
+            DstAccessMask = dstAccessMask,
             SubresourceRange = new ImageSubresourceRange
             {
                 AspectMask = ImageAspectFlags.ColorBit,
@@ -497,8 +540,7 @@ internal static unsafe class VkHelper
             }
         };
 
-        vk.CmdPipelineBarrier(cb, PipelineStageFlags.ColorAttachmentOutputBit,
-            PipelineStageFlags.ColorAttachmentOutputBit, 0, 0, null, 0, null, 1, &imageBarrier);
+        vk.CmdPipelineBarrier(cb, srcStage, dstStage, 0, 0, null, 0, null, 1, &imageBarrier);
     }
 
     public struct Queues

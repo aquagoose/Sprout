@@ -1,7 +1,13 @@
-﻿namespace Sprout.EntitySystem;
+﻿using Sprout.Graphics;
+
+namespace Sprout.EntitySystem;
 
 public class Scene : IDisposable
 {
+    protected internal App App;
+
+    protected GraphicsDevice Device => App.Device;
+    
     public virtual void Initialize() { }
 
     public virtual void Update(float dt) { }

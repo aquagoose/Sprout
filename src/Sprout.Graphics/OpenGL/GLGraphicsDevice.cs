@@ -56,6 +56,7 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
 
         SDL.GetWindowSizeInPixels(_sdlWindow, out int w, out int h);
         _swapchainSize = new Size(w, h);
+        Viewport = new Viewport(0, 0, (uint) w, (uint) h);
     }
 
     public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
@@ -138,6 +139,7 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
     public override void ResizeSwapchain(uint width, uint height)
     {
         _swapchainSize = new Size((int) width, (int) height);
+        Viewport = new Viewport(0, 0, width, height);
     }
 
     public override void Dispose()

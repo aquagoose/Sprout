@@ -221,7 +221,7 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         BufferImageCopy imageCopy = new()
         {
             BufferOffset = _bufferOffset,
-            ImageExtent = new Extent3D() { Width = (uint) textureSize.Width, Height = (uint) textureSize.Height },
+            ImageExtent = new Extent3D { Width = (uint) textureSize.Width, Height = (uint) textureSize.Height, Depth = 1 },
             ImageSubresource = new ImageSubresourceLayers
             {
                 AspectMask = ImageAspectFlags.ColorBit,

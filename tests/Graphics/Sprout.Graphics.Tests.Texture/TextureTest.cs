@@ -77,6 +77,8 @@ public class TextureTest() : TestBase("Texture Test")
         _renderable.PushTexture(0, _texture);
         _renderable.PushUniformData(1, Matrix4x4.CreateRotationZ(_rotation));
         _renderable.Draw();
+        _renderable.PushUniformData(1, Matrix4x4.CreateRotationZ(-_rotation));
+        _renderable.Draw();
         Device.Present();
     }
 

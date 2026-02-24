@@ -5,6 +5,7 @@ using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using Sprout.Graphics.Vulkan.VMA;
 using static Sprout.Graphics.Vulkan.VMA.Vma;
+using Buffer = Silk.NET.Vulkan.Buffer;
 using Image = Silk.NET.Vulkan.Image;
 using Semaphore = Silk.NET.Vulkan.Semaphore;
 using VkViewport = Silk.NET.Vulkan.Viewport;
@@ -15,7 +16,8 @@ namespace Sprout.Graphics.Vulkan;
 internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
 {
     private const uint FramesInFlight = 3;
-    private const uint TransferBufferSize = 64 * 1024 * 1024;
+    private const uint TransferBufferSize = 64 * 1024 * 1024; // 64mb transfer buffer
+    private const uint UniformBufferSize = 4 * 1024 * 1024; // 4mb uniform buffer.
     
     public override bool IsDisposed { get; protected set; }
 
@@ -43,7 +45,9 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     private readonly Fence _fence;
 
     private readonly VkBuffer _transferBuffer;
-    private ulong _bufferOffset;
+    private ulong _transferBufferOffset;
+    private readonly VkBuffer _globalUniformBuffer;
+    private ulong _uniformBufferOffset;
     
     public readonly Device Device;
     public readonly Allocator* Allocator;
@@ -82,6 +86,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
             GetDeviceProcAddress);
 
         _transferBuffer = VkHelper.CreateBuffer(Allocator, BufferUsageFlags.TransferSrcBit, TransferBufferSize, true);
+        _globalUniformBuffer =
+            VkHelper.CreateBuffer(Allocator, BufferUsageFlags.UniformBufferBit, UniformBufferSize, true);
         
         if (!_vk.TryGetDeviceExtension(_instance, Device, out _khrSwapchain))
             throw new Exception("Failed to get KhrSwapchain extension!");
@@ -183,47 +189,40 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
 
     public override void ResizeSwapchain(uint width, uint height)
     {
-        throw new NotImplementedException();
+        _swapchainSize = new Extent2D(width, height);
+        RecreateSwapchain();
     }
 
     public void CopyToBuffer(VkBuffer buffer, uint offset, uint size, void* pData)
     {
-        if (_bufferOffset + size >= TransferBufferSize)
+        if (_transferBufferOffset + size >= TransferBufferSize)
             throw new NotImplementedException("Buffer offset too high and resizing hasn't been implemented yet!");
         
-        // TODO: Persistently mapped buffers
-        void* mappedData;
-        vmaMapMemory(Allocator, _transferBuffer.Allocation, &mappedData).Check("Map memory");
-        Unsafe.CopyBlock((byte*) mappedData + _bufferOffset, pData, size);
-        vmaUnmapMemory(Allocator, _transferBuffer.Allocation);
+        Unsafe.CopyBlock((byte*) _transferBuffer.MappedPtr + _transferBufferOffset, pData, size);
 
         BufferCopy copy = new()
         {
-            SrcOffset = _bufferOffset,
+            SrcOffset = _transferBufferOffset,
             DstOffset = offset,
             Size = size
         };
         
         _vk.CmdCopyBuffer(CurrentCommandBuffer, _transferBuffer.Buffer, buffer.Buffer, 1, &copy);
-        _bufferOffset += size;
+        _transferBufferOffset += size;
     }
 
     public void CopyToTexture(Image image, Size textureSize, uint bpp, void* pData)
     {
         uint totalSize = (uint) (textureSize.Width * textureSize.Height * bpp);
         
-        if (_bufferOffset + totalSize >= TransferBufferSize)
+        if (_transferBufferOffset + totalSize >= TransferBufferSize)
             throw new NotImplementedException("Buffer offset too high and resizing hasn't been implemented yet!");
         
-        // TODO: Persistently mapped buffers
-        void* mappedData;
-        vmaMapMemory(Allocator, _transferBuffer.Allocation, &mappedData).Check("Map memory");
-        Unsafe.CopyBlock((byte*) mappedData + _bufferOffset, pData, totalSize);
-        vmaUnmapMemory(Allocator, _transferBuffer.Allocation);
-
+        Unsafe.CopyBlock((byte*) _transferBuffer.MappedPtr + _transferBufferOffset, pData, totalSize);
+        
         BufferImageCopy imageCopy = new()
         {
-            BufferOffset = _bufferOffset,
+            BufferOffset = _transferBufferOffset,
             ImageExtent = new Extent3D { Width = (uint) textureSize.Width, Height = (uint) textureSize.Height, Depth = 1 },
             ImageSubresource = new ImageSubresourceLayers
             {
@@ -244,6 +243,21 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         VkHelper.TransitionImage(_vk, CurrentCommandBuffer, image, ImageLayout.TransferDstOptimal,
             ImageLayout.ShaderReadOnlyOptimal, PipelineStageFlags.TransferBit, PipelineStageFlags.FragmentShaderBit,
             AccessFlags.TransferWriteBit, AccessFlags.ShaderReadBit);
+
+        _transferBufferOffset += totalSize;
+    }
+
+    public Buffer PushUniform(uint size, void* pData, out ulong offset)
+    {
+        if (_transferBufferOffset + size >= TransferBufferSize)
+            throw new NotImplementedException("Buffer offset too high and resizing hasn't been implemented yet!");
+        
+        Unsafe.CopyBlock((byte*) _globalUniformBuffer.MappedPtr + _transferBufferOffset, pData, size);
+        offset = _transferBufferOffset;
+
+        _transferBufferOffset += size;
+        
+        return _globalUniformBuffer.Buffer;
     }
 
     public VkSampler GetSampler(Sampler sampler)
@@ -273,17 +287,34 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         if (IsDisposed)
             return;
         IsDisposed = true;
+
+        _vk.DeviceWaitIdle(Device);
+        
+        foreach ((_, VkSampler sampler) in _samplerCache)
+            _vk.DestroySampler(Device, sampler, null);
+        
+        foreach (Semaphore semaphore in _semaphores)
+            _vk.DestroySemaphore(Device, semaphore, null);
         
         _vk.DestroyFence(Device, _fence, null);
+        
         foreach (ImageView view in _swapchainImageViews)
             _vk.DestroyImageView(Device, view, null);
+        
         _khrSwapchain.DestroySwapchain(Device, _swapchain, null);
         _khrSwapchain.Dispose();
+        
+        vmaDestroyBuffer(Allocator, _globalUniformBuffer.Buffer, _globalUniformBuffer.Allocation);
+        vmaDestroyBuffer(Allocator, _transferBuffer.Buffer, _transferBuffer.Allocation);
+        
         vmaDestroyAllocator(Allocator);
+        
         _vk.DestroyCommandPool(Device, _commandPool, null);
         _vk.DestroyDevice(Device, null);
+        
         SDL.VulkanDestroySurface(_instance.Handle, (nint) _surface.Handle, IntPtr.Zero);
         _khrSurface.Dispose();
+        
         _vk.DestroyInstance(_instance, null);
         _vk.Dispose();
     }
@@ -291,8 +322,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     private void RecreateSwapchain()
     {
         SwapchainKHR oldSwapchain = _swapchain;
-        VkHelper.CreateSwapchain(_khrSwapchain, _physicalDevice, Device, in _queues, _surface, _khrSurface, _window,
-            oldSwapchain, out Format format, out _swapchainSize);
+        _swapchain = VkHelper.CreateSwapchain(_khrSwapchain, _physicalDevice, Device, in _queues, _surface, _khrSurface,
+            _window, oldSwapchain, out Format format, out _swapchainSize);
         
         _khrSwapchain.DestroySwapchain(Device, oldSwapchain, null);
         foreach (ImageView view in _swapchainImageViews)
@@ -316,7 +347,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
             _currentFrameInFlight = 0;
         
         VkHelper.BeginCommandBuffer(_vk, CurrentCommandBuffer);
-        _bufferOffset = 0;
+        _transferBufferOffset = 0;
+        _uniformBufferOffset = 0;
     }
 
     private nint GetInstanceProcAddress(Instance instance, byte* name)

@@ -297,7 +297,26 @@ internal sealed unsafe class VkRenderable : Renderable
 
     public override void PushUniformData(uint index, uint offset, uint sizeInBytes, void* pData)
     {
-        
+        Buffer uniformBuffer = _device.PushUniform(sizeInBytes, pData, out ulong bufferOffset);
+
+        DescriptorBufferInfo bufferInfo = new()
+        {
+            Buffer = uniformBuffer,
+            Offset = bufferOffset,
+            Range = sizeInBytes
+        };
+
+        WriteDescriptorSet writeDescriptor = new()
+        {
+            SType = StructureType.WriteDescriptorSet,
+            DescriptorType = DescriptorType.UniformBuffer,
+            DstBinding = index,
+            DescriptorCount = 1,
+            PBufferInfo = &bufferInfo
+        };
+
+        _device.KhrPushDescriptor.CmdPushDescriptorSet(_device.CurrentCommandBuffer, PipelineBindPoint.Graphics,
+            _layout, 0, 1, &writeDescriptor);
     }
 
     public override void PushTexture(uint index, Texture texture)
@@ -366,6 +385,7 @@ internal sealed unsafe class VkRenderable : Renderable
         if (_indexBuffer.Buffer.Handle != 0)
             vmaDestroyBuffer(_device.Allocator, _indexBuffer.Buffer, _indexBuffer.Allocation);
         
+        _vk.DestroyDescriptorSetLayout(_device.Device, _descriptorLayout, null);
         _vk.DestroyPipeline(_device.Device, _pipeline, null);
         _vk.DestroyPipelineLayout(_device.Device, _layout, null);
     }

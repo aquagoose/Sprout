@@ -423,14 +423,17 @@ internal static unsafe class VkHelper
         AllocationCreateInfo allocationInfo = new()
         {
             usage = VMA_MEMORY_USAGE_AUTO,
-            flags = (uint) (mappable ? VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT : 0)
+            flags = mappable
+                ? (uint) VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | (uint) VMA_ALLOCATION_CREATE_MAPPED_BIT
+                : 0
         };
 
         Buffer buffer;
         Allocation* allocation;
-        vmaCreateBuffer(allocator, &bufferInfo, &allocationInfo, &buffer, &allocation, null).Check("Create buffer");
+        VmaAllocationInfo allocInfo;
+        vmaCreateBuffer(allocator, &bufferInfo, &allocationInfo, &buffer, &allocation, &allocInfo).Check("Create buffer");
 
-        return new VkBuffer(buffer, allocation);
+        return new VkBuffer(buffer, allocation, allocInfo.pMappedData);
     }
 
     public static bool NextFrame(KhrSwapchain khrSwapchain, SwapchainKHR swapchain, Device device, Fence fence, out uint imageIndex)

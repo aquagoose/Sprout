@@ -57,6 +57,9 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         SDL.GetWindowSizeInPixels(_sdlWindow, out int w, out int h);
         _swapchainSize = new Size(w, h);
         Viewport = new Viewport(0, 0, (uint) w, (uint) h);
+        
+        _gl.Enable(EnableCap.Blend);
+        _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
 
     public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)

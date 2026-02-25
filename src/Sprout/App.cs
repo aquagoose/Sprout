@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
+using Sprout.Audio;
 using Sprout.Graphics;
 
 namespace Sprout;
@@ -8,6 +9,7 @@ public abstract class App : IDisposable
 {
     private Window _window = null!;
     private GraphicsDevice _graphicsDevice = null!;
+    private AudioDevice _audioDevice = null!;
     private EventManager _eventManager = null!;
     private InputManager _inputManager = null!;
     private bool _alive;
@@ -15,6 +17,8 @@ public abstract class App : IDisposable
     public Window Window => _window;
 
     public GraphicsDevice Device => _graphicsDevice;
+
+    public AudioDevice Audio => _audioDevice;
 
     public EventManager Events => _eventManager;
 
@@ -41,6 +45,7 @@ public abstract class App : IDisposable
 
         _window = new Window(in info.Window, backend);
         _graphicsDevice = GraphicsDevice.Create(_window.Handle, backend);
+        _audioDevice = new AudioDevice();
 
         _eventManager = new EventManager(_window);
         _inputManager = new InputManager(_eventManager);
@@ -76,6 +81,7 @@ public abstract class App : IDisposable
         Unload();
         _inputManager.Dispose();
         _eventManager.Dispose();
+        _audioDevice.Dispose();
         _graphicsDevice.Dispose();
         _window.Dispose();
     }

@@ -1,1 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MixrSharp" Version="0.1.0" />
+    <PackageReference Include="SDL3-CS" Version="3.3.7" />
+  </ItemGroup>
+</Project>

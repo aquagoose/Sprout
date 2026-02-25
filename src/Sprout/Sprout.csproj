@@ -4,6 +4,7 @@
     <PackageReference Include="SDL3-CS.Native" Version="3.3.7" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Sprout.Audio\Sprout.Audio.csproj" />
     <ProjectReference Include="..\Sprout.Graphics\Sprout.Graphics.csproj" />
   </ItemGroup>
 </Project>

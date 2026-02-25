@@ -1,4 +1,5 @@
-﻿using Sprout.Graphics;
+﻿using Sprout.Audio;
+using Sprout.Graphics;
 
 namespace Sprout.EntitySystem;
 
@@ -11,6 +12,8 @@ public class Scene : IDisposable
     protected Window Window => App.Window;
 
     protected GraphicsDevice Device => App.Device;
+
+    protected AudioDevice Audio => App.Audio;
 
     protected EventManager Events => App.Events;
 

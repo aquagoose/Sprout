@@ -1,7 +1,4 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/Sprout.EntitySystem/Sprout.EntitySystem.csproj" />
-  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Sprout.Tests.TestGame/Sprout.Tests.TestGame.csproj" />
     <Project Path="tests/Sprout.Tests.WindowAndEvents/Sprout.Tests.WindowAndEvents.csproj" />
@@ -21,6 +18,7 @@
     <Project Path="tools/CompileShaders/CompileShaders.csproj" />
   </Folder>
   <Project Path="src/Sprout.Audio/Sprout.Audio.csproj" />
+  <Project Path="src/Sprout.EntitySystem/Sprout.EntitySystem.csproj" />
   <Project Path="src/Sprout.Graphics.ShaderUtils/Sprout.Graphics.ShaderUtils.csproj" />
   <Project Path="src/Sprout.Graphics/Sprout.Graphics.csproj" />
   <Project Path="src/Sprout/Sprout.csproj" />

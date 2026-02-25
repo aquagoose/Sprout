@@ -1,46 +1,37 @@
 namespace Sprout;
 
-public class Input : IDisposable
+public static class Input
 {
-    private readonly Events _events;
-    
-    private readonly HashSet<Key> _keysDown;
-    private readonly HashSet<Key> _newKeysDown;
+    private static readonly HashSet<Key> _keysDown;
+    private static readonly HashSet<Key> _newKeysDown;
 
-    public Input(Events events)
+    static Input()
     {
         _keysDown = [];
         _newKeysDown = [];
         
-        _events = events;
-        _events.KeyDown += EventsOnKeyDown;
-        _events.KeyUp += EventsOnKeyUp;
+        Events.KeyDown += EventsOnKeyDown;
+        Events.KeyUp += EventsOnKeyUp;
     }
 
-    public bool IsKeyDown(Key key) => _keysDown.Contains(key);
+    public static bool IsKeyDown(Key key) => _keysDown.Contains(key);
 
-    public bool IsKeyPressed(Key key) => _newKeysDown.Contains(key);
+    public static bool IsKeyPressed(Key key) => _newKeysDown.Contains(key);
 
-    public void Update()
+    public static void Update()
     {
         _newKeysDown.Clear();
     }
 
-    private void EventsOnKeyDown(Key key)
+    private static void EventsOnKeyDown(Key key)
     {
         _keysDown.Add(key);
         _newKeysDown.Add(key);
     }
 
-    private void EventsOnKeyUp(Key key)
+    private static void EventsOnKeyUp(Key key)
     {
         _keysDown.Remove(key);
         _newKeysDown.Remove(key);
-    }
-    
-    public void Dispose()
-    {
-        _events.KeyUp -= EventsOnKeyUp;
-        _events.KeyDown -= EventsOnKeyDown;
     }
 }

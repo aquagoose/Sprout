@@ -3,15 +3,13 @@ using Sprout;
 using Sprout.Graphics;
 
 bool alive = true;
-Window window = new Window("Window and Events Test", new Size(1280, 720), Backend.OpenGL);
+Events.Quit += () => alive = false;
 
-Events events = new Events();
-events.Quit += () => alive = false;
+Window window = new Window("Window and Events Test", new Size(1280, 720), Backend.OpenGL);
 
 while (alive)
 {
-    events.PollEvents();
+    Events.PollEvents();
 }
 
-events.Dispose();
 window.Dispose();

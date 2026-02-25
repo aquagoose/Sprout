@@ -7,16 +7,12 @@ namespace Sprout;
 public abstract class App : IDisposable
 {
     private Window _window = null!;
-    private Events _events = null!;
-    private Input _input = null!;
     private GraphicsDevice _device = null!;
     private bool _alive;
 
     public Window Window => _window;
 
     public GraphicsDevice Device => _device;
-
-    public Input Input => _input;
 
     protected virtual void Initialize() { }
 
@@ -33,23 +29,20 @@ public abstract class App : IDisposable
             backend = Backend.D3D11;
         else
             backend = Backend.OpenGL;
-
-        _window = new Window($"{info.AppName} ({backend})", new Size(1280, 720), backend);
-        _events = new Events();
-        _events.Quit += Close;
-
-        _input = new Input(_events);
         
+        _window = new Window($"{info.AppName} ({backend})", new Size(1280, 720), backend);
         _device = GraphicsDevice.Create(_window.Handle, backend);
 
+        Events.Quit += Close;
+        
         Initialize();
         
         Stopwatch sw = Stopwatch.StartNew();
         _alive = true;
         while (_alive)
         {
-            _input.Update();
-            _events.PollEvents();
+            Input.Update();
+            Events.PollEvents();
 
             double dt = sw.Elapsed.TotalSeconds;
             sw.Restart();
@@ -69,9 +62,8 @@ public abstract class App : IDisposable
     public void Dispose()
     {
         Unload();
+        Events.Quit -= Close;
         _device.Dispose();
-        _input.Dispose();
-        _events.Dispose();
         _window.Dispose();
     }
 }

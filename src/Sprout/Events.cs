@@ -2,15 +2,15 @@ using SDL3;
 
 namespace Sprout;
 
-public sealed class Events : IDisposable
+public static class Events
 {
-    public event OnQuit Quit;
+    public static event OnQuit Quit;
 
-    public event OnKeyDown KeyDown;
+    public static event OnKeyDown KeyDown;
 
-    public event OnKeyUp KeyUp;
+    public static event OnKeyUp KeyUp;
     
-    public Events()
+    static Events()
     {
         if (!SDL.Init(SDL.InitFlags.Events))
             throw new Exception($"Failed to initialize SDL: {SDL.GetError()}");
@@ -20,7 +20,7 @@ public sealed class Events : IDisposable
         KeyUp = delegate { };
     }
 
-    public void PollEvents()
+    public static void PollEvents()
     {
         while (SDL.PollEvent(out SDL.Event winEvent))
         {
@@ -39,11 +39,6 @@ public sealed class Events : IDisposable
                     break;
             }
         }
-    }
-    
-    public void Dispose()
-    {
-        SDL.QuitSubSystem(SDL.InitFlags.Events);
     }
 
     public delegate void OnQuit();

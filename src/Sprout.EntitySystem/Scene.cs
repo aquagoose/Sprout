@@ -6,6 +6,8 @@ public class Scene : IDisposable
 {
     protected internal App App;
 
+    protected Window Window => App.Window;
+
     protected GraphicsDevice Device => App.Device;
     
     public virtual void Initialize() { }

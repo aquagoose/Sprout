@@ -1,3 +1,4 @@
+using System.Numerics;
 using SDL3;
 
 namespace Sprout;
@@ -9,6 +10,12 @@ public static class Events
     public static event OnKeyDown KeyDown;
 
     public static event OnKeyUp KeyUp;
+
+    public static event OnMouseButtonDown MouseButtonDown;
+
+    public static event OnMouseButtonUp MouseButtonUp;
+
+    public static event OnMouseMove MouseMove;
     
     static Events()
     {
@@ -18,6 +25,9 @@ public static class Events
         Quit = delegate { };
         KeyDown = delegate { };
         KeyUp = delegate { };
+        MouseButtonDown = delegate { };
+        MouseButtonUp = delegate { };
+        MouseMove = delegate { };
     }
 
     public static void PollEvents()
@@ -32,10 +42,25 @@ public static class Events
                     break;
                 
                 case SDL.EventType.KeyDown:
+                    if (winEvent.Key.Repeat)
+                        break;
+                    
                     KeyDown(SdlUtils.KeycodeToKey(winEvent.Key.Key));
                     break;
                 case SDL.EventType.KeyUp:
                     KeyUp(SdlUtils.KeycodeToKey(winEvent.Key.Key));
+                    break;
+                
+                case SDL.EventType.MouseButtonDown:
+                    MouseButtonDown(SdlUtils.ButtonIndexToButton(winEvent.Button.Button));
+                    break;
+                case SDL.EventType.MouseButtonUp:
+                    MouseButtonUp(SdlUtils.ButtonIndexToButton(winEvent.Button.Button));
+                    break;
+                case SDL.EventType.MouseMotion:
+                    // TODO: Scale for the window scale factor
+                    MouseMove(new Vector2(winEvent.Motion.X, winEvent.Motion.Y),
+                        new Vector2(winEvent.Motion.XRel, winEvent.Motion.YRel));
                     break;
             }
         }
@@ -46,4 +71,10 @@ public static class Events
     public delegate void OnKeyDown(Key key);
 
     public delegate void OnKeyUp(Key key);
+
+    public delegate void OnMouseButtonDown(MouseButton button);
+
+    public delegate void OnMouseButtonUp(MouseButton button);
+
+    public delegate void OnMouseMove(Vector2 mousePos, Vector2 mouseDelta);
 }

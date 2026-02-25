@@ -130,8 +130,8 @@ internal static class SdlUtils
         };
     }
 
-    /*public static MouseButton ButtonIndexToButton(byte button)
+    public static MouseButton ButtonIndexToButton(byte button)
     {
         return (MouseButton) button;
-    }*/
+    }
 }

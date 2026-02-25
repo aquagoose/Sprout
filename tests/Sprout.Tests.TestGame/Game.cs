@@ -18,6 +18,9 @@ public class Game : App
     protected override void Update(float dt)
     {
         const float speed = 50;
+        
+        if (Input.IsKeyPressed(Key.Escape))
+            Close();
 
         if (Input.IsKeyDown(Key.W))
             _position.Y -= speed * dt;
@@ -27,6 +30,13 @@ public class Game : App
             _position.X += speed * dt;
         if (Input.IsKeyDown(Key.A))
             _position.X -= speed * dt;
+        if (Input.IsKeyPressed(Key.Space))
+            _position = Input.MousePosition;
+
+        if (Input.IsMouseButtonDown(MouseButton.Left))
+            _position += Input.MouseDelta;
+        if (Input.IsMouseButtonPressed(MouseButton.Right))
+            _position = Input.MousePosition;
     }
 
     protected override void Draw()

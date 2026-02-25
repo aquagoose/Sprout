@@ -7,12 +7,18 @@ namespace Sprout;
 public abstract class App : IDisposable
 {
     private Window _window = null!;
-    private GraphicsDevice _device = null!;
+    private GraphicsDevice _graphicsDevice = null!;
+    private EventManager _eventManager = null!;
+    private InputManager _inputManager = null!;
     private bool _alive;
 
     public Window Window => _window;
 
-    public GraphicsDevice Device => _device;
+    public GraphicsDevice Device => _graphicsDevice;
+
+    public EventManager Events => _eventManager;
+
+    public InputManager Input => _inputManager;
 
     protected virtual void Initialize() { }
 
@@ -31,9 +37,12 @@ public abstract class App : IDisposable
             backend = Backend.OpenGL;
         
         _window = new Window($"{info.AppName} ({backend})", new Size(1280, 720), backend);
-        _device = GraphicsDevice.Create(_window.Handle, backend);
+        _graphicsDevice = GraphicsDevice.Create(_window.Handle, backend);
 
-        Events.Quit += Close;
+        _eventManager = new EventManager(_window);
+        _inputManager = new InputManager(_eventManager);
+
+        _eventManager.Quit += Close;
         
         Initialize();
         
@@ -41,8 +50,8 @@ public abstract class App : IDisposable
         _alive = true;
         while (_alive)
         {
-            Input.Update();
-            Events.PollEvents();
+            _inputManager.Update();
+            _eventManager.PollEvents();
 
             double dt = sw.Elapsed.TotalSeconds;
             sw.Restart();
@@ -50,7 +59,7 @@ public abstract class App : IDisposable
             Update((float) dt);
             Draw();
             
-            _device.Present();
+            _graphicsDevice.Present();
         }
     }
 
@@ -62,8 +71,9 @@ public abstract class App : IDisposable
     public void Dispose()
     {
         Unload();
-        Events.Quit -= Close;
-        _device.Dispose();
+        _inputManager.Dispose();
+        _eventManager.Dispose();
+        _graphicsDevice.Dispose();
         _window.Dispose();
     }
 }

@@ -20,6 +20,8 @@ public sealed class Window : IDisposable
         set => SDL.SetWindowSize(_window, value.Width, value.Height);
     }
 
+    public float ContentScale => SDL.GetWindowPixelDensity(_window);
+
     public Window(string title, Size size, Backend backend)
     {
         if (!SDL.Init(SDL.InitFlags.Video))

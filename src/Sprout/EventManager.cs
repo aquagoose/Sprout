@@ -3,22 +3,26 @@ using SDL3;
 
 namespace Sprout;
 
-public static class Events
+public class EventManager : IDisposable
 {
-    public static event OnQuit Quit;
+    public event OnQuit Quit;
 
-    public static event OnKeyDown KeyDown;
+    public event OnKeyDown KeyDown;
 
-    public static event OnKeyUp KeyUp;
+    public event OnKeyUp KeyUp;
 
-    public static event OnMouseButtonDown MouseButtonDown;
+    public event OnMouseButtonDown MouseButtonDown;
 
-    public static event OnMouseButtonUp MouseButtonUp;
+    public event OnMouseButtonUp MouseButtonUp;
 
-    public static event OnMouseMove MouseMove;
+    public event OnMouseMove MouseMove;
+
+    private readonly Window _window;
     
-    static Events()
+    public EventManager(Window window)
     {
+        _window = window;
+        
         if (!SDL.Init(SDL.InitFlags.Events))
             throw new Exception($"Failed to initialize SDL: {SDL.GetError()}");
 
@@ -30,7 +34,7 @@ public static class Events
         MouseMove = delegate { };
     }
 
-    public static void PollEvents()
+    public void PollEvents()
     {
         while (SDL.PollEvent(out SDL.Event winEvent))
         {
@@ -59,11 +63,21 @@ public static class Events
                     break;
                 case SDL.EventType.MouseMotion:
                     // TODO: Scale for the window scale factor
-                    MouseMove(new Vector2(winEvent.Motion.X, winEvent.Motion.Y),
-                        new Vector2(winEvent.Motion.XRel, winEvent.Motion.YRel));
+                    MouseMove(new Vector2(winEvent.Motion.X, winEvent.Motion.Y) * _window.ContentScale,
+                        new Vector2(winEvent.Motion.XRel, winEvent.Motion.YRel) * _window.ContentScale);
                     break;
             }
         }
+    }
+
+    public void Dispose()
+    {
+        MouseMove = delegate { };
+        MouseButtonUp = delegate { };
+        MouseButtonDown = delegate { };
+        KeyUp = delegate { };
+        KeyDown = delegate { };
+        Quit = delegate { };
     }
 
     public delegate void OnQuit();

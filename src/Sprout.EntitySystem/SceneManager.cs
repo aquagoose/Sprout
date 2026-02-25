@@ -12,7 +12,7 @@ public class SceneManager : IDisposable
         _app = app;
         
         _currentScene = initialScene;
-        _currentScene.App = app;
+        _currentScene.AppInternal = app;
         _currentScene.Initialize();
     }
 

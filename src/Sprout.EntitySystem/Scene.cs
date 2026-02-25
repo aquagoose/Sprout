@@ -4,11 +4,17 @@ namespace Sprout.EntitySystem;
 
 public class Scene : IDisposable
 {
-    protected internal App App;
+    internal App AppInternal;
+    
+    protected App App => AppInternal;
 
     protected Window Window => App.Window;
 
     protected GraphicsDevice Device => App.Device;
+
+    protected EventManager Events => App.Events;
+
+    protected InputManager Input => App.Input;
     
     public virtual void Initialize() { }
 

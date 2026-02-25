@@ -30,13 +30,16 @@ public abstract class App : IDisposable
 
     public void Run(in AppInfo info)
     {
-        Backend backend;
-        if (OperatingSystem.IsWindows())
-            backend = Backend.D3D11;
-        else
-            backend = Backend.OpenGL;
-        
-        _window = new Window($"{info.AppName} ({backend})", new Size(1280, 720), backend);
+        Backend backend = info.Backend;
+        if (backend == Backend.Unknown)
+        {
+            if (OperatingSystem.IsWindows())
+                backend = Backend.D3D11;
+            else
+                backend = Backend.OpenGL;
+        }
+
+        _window = new Window(in info.Window, backend);
         _graphicsDevice = GraphicsDevice.Create(_window.Handle, backend);
 
         _eventManager = new EventManager(_window);

@@ -63,8 +63,8 @@ public class EventManager : IDisposable
                     break;
                 case SDL.EventType.MouseMotion:
                     // TODO: Scale for the window scale factor
-                    MouseMove(new Vector2(winEvent.Motion.X, winEvent.Motion.Y) * _window.ContentScale,
-                        new Vector2(winEvent.Motion.XRel, winEvent.Motion.YRel) * _window.ContentScale);
+                    MouseMove(new Vector2(winEvent.Motion.X, winEvent.Motion.Y) * _window.PixelDensity,
+                        new Vector2(winEvent.Motion.XRel, winEvent.Motion.YRel) * _window.PixelDensity);
                     break;
             }
         }

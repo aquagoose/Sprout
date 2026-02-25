@@ -4,7 +4,7 @@ using Sprout.Graphics;
 
 bool alive = true;
 
-Window window = new Window("Window and Events Test", new Size(1280, 720), Backend.OpenGL);
+Window window = new Window(new WindowInfo(), Backend.OpenGL);
 EventManager eventManager = new EventManager(window);
 
 while (alive)

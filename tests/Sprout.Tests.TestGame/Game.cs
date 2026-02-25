@@ -17,7 +17,7 @@ public class Game : App
 
     protected override void Update(float dt)
     {
-        const float speed = 50;
+        const float speed = 100;
         
         if (Input.IsKeyPressed(Key.Escape))
             Close();

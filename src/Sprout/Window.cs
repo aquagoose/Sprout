@@ -20,14 +20,16 @@ public sealed class Window : IDisposable
         set => SDL.SetWindowSize(_window, value.Width, value.Height);
     }
 
-    public float ContentScale => SDL.GetWindowPixelDensity(_window);
+    public float PixelDensity => SDL.GetWindowPixelDensity(_window);
 
-    public Window(string title, Size size, Backend backend)
+    public Window(in WindowInfo info, Backend backend)
     {
         if (!SDL.Init(SDL.InitFlags.Video))
             throw new Exception($"Failed to initialize SDL: {SDL.GetError()}");
 
         SDL.WindowFlags flags = SDL.WindowFlags.HighPixelDensity;
+        if (info.Resizable)
+            flags |= SDL.WindowFlags.Resizable;
         
         switch (backend)
         {
@@ -54,7 +56,7 @@ public sealed class Window : IDisposable
                 throw new ArgumentOutOfRangeException(nameof(backend), backend, null);
         }
         
-        _window = SDL.CreateWindow(title, size.Width, size.Height, flags);
+        _window = SDL.CreateWindow(info.Title, info.Size.Width, info.Size.Height, flags);
         if (_window == 0)
             throw new Exception($"Failed to create SDL window: {SDL.GetError()}");
     }

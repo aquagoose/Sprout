@@ -17,6 +17,7 @@ public class AudioDevice : IDisposable
             throw new Exception($"Failed to initialize SDL: {SDL.GetError()}");
 
         _callback = AudioCallback;
+        _context = new Context(48000);
         
         SDL.AudioSpec spec = new()
         {
@@ -26,15 +27,16 @@ public class AudioDevice : IDisposable
         };
 
         _audioDevice = SDL.OpenAudioDeviceStream(SDL.AudioDeviceDefaultPlayback, in spec, _callback, 0);
+        if (_audioDevice == 0)
+            throw new Exception($"Failed to open audio device: {SDL.GetError()}");
         SDL.ResumeAudioStreamDevice(_audioDevice);
-        
-        _context = new Context(48000);
 
         _singleFireSounds = [];
     }
 
     public void Dispose()
     {
+        SDL.DestroyAudioStream(_audioDevice);
         _context.Dispose();
     }
 

@@ -16,6 +16,7 @@ internal sealed unsafe class D3D11Texture : Texture
 
     public readonly ID3D11Texture2D* Texture;
     public readonly ID3D11ShaderResourceView* TextureSrv;
+    public readonly ID3D11RenderTargetView* RenderTarget;
     
     public override Sampler Sampler { get; set; }
 
@@ -76,6 +77,15 @@ internal sealed unsafe class D3D11Texture : Texture
             }
         }
 
+        if ((usage & TextureUsage.RenderTexture) != 0)
+        {
+            fixed (ID3D11RenderTargetView** renderTarget = &RenderTarget)
+            {
+                device->CreateRenderTargetView((ID3D11Resource*) Texture, null, renderTarget)
+                    .Check("Create render target");
+            }
+        }
+
         if (pData != null)
         {
             context->UpdateSubresource((ID3D11Resource*) Texture, 0, null, pData, 4 * width, 0);
@@ -91,6 +101,8 @@ internal sealed unsafe class D3D11Texture : Texture
             return;
         IsDisposed = true;
 
+        if (RenderTarget != null)
+            RenderTarget->Release();
         if (TextureSrv != null)
             TextureSrv->Release();
         Texture->Release();

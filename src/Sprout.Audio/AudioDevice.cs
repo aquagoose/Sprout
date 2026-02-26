@@ -9,6 +9,8 @@ public class AudioDevice : IDisposable
     private readonly IntPtr _audioDevice;
     private readonly Context _context;
 
+    private List<StreamSound> _singleFireSounds;
+
     public AudioDevice()
     {
         if (!SDL.Init(SDL.InitFlags.Audio))
@@ -27,6 +29,8 @@ public class AudioDevice : IDisposable
         SDL.ResumeAudioStreamDevice(_audioDevice);
         
         _context = new Context(48000);
+
+        _singleFireSounds = [];
     }
 
     public void Dispose()
@@ -34,11 +38,26 @@ public class AudioDevice : IDisposable
         _context.Dispose();
     }
 
-    public Sound CreateSound(string path)
+    public StreamSound CreateStreamSound(string path)
     {
-        return new Sound(_context, path);
+        return new StreamSound(_context, path);
     }
-    
+
+    public void PlaySoundOneShot(string path)
+    {
+        StreamSound sound = new StreamSound(_context, path);
+        sound.FinishedPlaying += SoundOnFinishedPlaying;
+        _singleFireSounds.Add(sound);
+        sound.Play();
+    }
+
+    private void SoundOnFinishedPlaying(StreamSound sound)
+    {
+        sound.Dispose();
+        _singleFireSounds.Remove(sound);
+        Console.WriteLine(_singleFireSounds.Count);
+    }
+
     private unsafe void AudioCallback(IntPtr userdata, IntPtr stream, int additionalAmount, int totalAmount)
     {
         const int bufferSize = 512;

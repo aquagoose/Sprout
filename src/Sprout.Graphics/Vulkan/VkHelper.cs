@@ -34,6 +34,18 @@ internal static unsafe class VkHelper
         };
     }
 
+    public static SamplerAddressMode ToVk(this TextureAddress address)
+    {
+        return address switch
+        {
+            TextureAddress.Repeat => SamplerAddressMode.Repeat,
+            TextureAddress.RepeatMirrored => SamplerAddressMode.MirroredRepeat,
+            TextureAddress.ClampToEdge => SamplerAddressMode.ClampToEdge,
+            TextureAddress.ClampToBorder => SamplerAddressMode.ClampToBorder,
+            _ => throw new ArgumentOutOfRangeException(nameof(address), address, null)
+        };
+    }
+
     public static DescriptorType ToVk(this UniformType type)
     {
         return type switch

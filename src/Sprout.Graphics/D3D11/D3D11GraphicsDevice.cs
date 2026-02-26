@@ -163,9 +163,8 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         D3D11_SAMPLER_DESC samplerDesc = new()
         {
             Filter = filter,
-            AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
-            AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
-            AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
+            AddressU = sampler.AddressU.ToD3D(),
+            AddressV = sampler.AddressV.ToD3D(),
             MinLOD = 0,
             MaxLOD = float.MaxValue
         };

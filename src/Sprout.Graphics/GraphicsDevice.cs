@@ -13,7 +13,7 @@ public abstract class GraphicsDevice : IDisposable
 {
     internal const TextureUsage DefaultTextureUsage = TextureUsage.Shader | TextureUsage.GenerateMipmaps;
 
-    internal static readonly Sampler DefaultSampler = Sampler.Linear;
+    internal static readonly Sampler DefaultSampler = Sampler.LinearWrap;
     
     /// <summary>
     /// Gets if this <see cref="GraphicsDevice"/> has been disposed.

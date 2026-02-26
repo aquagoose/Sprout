@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using TerraFX.Interop.DirectX;
 using TerraFX.Interop.Windows;
+using static TerraFX.Interop.DirectX.D3D11_TEXTURE_ADDRESS_MODE;
 
 namespace Sprout.Graphics.D3D11;
 
@@ -22,6 +24,18 @@ internal static class D3D11Utils
             Semantic.Tangent => "TANGENT",
             Semantic.BiTangent => "BITANGENT",
             _ => throw new ArgumentOutOfRangeException(nameof(semantic), semantic, null)
+        };
+    }
+
+    public static D3D11_TEXTURE_ADDRESS_MODE ToD3D(this TextureAddress address)
+    {
+        return address switch
+        {
+            TextureAddress.Repeat => D3D11_TEXTURE_ADDRESS_WRAP,
+            TextureAddress.RepeatMirrored => D3D11_TEXTURE_ADDRESS_MIRROR,
+            TextureAddress.ClampToEdge => D3D11_TEXTURE_ADDRESS_CLAMP,
+            TextureAddress.ClampToBorder => D3D11_TEXTURE_ADDRESS_BORDER,
+            _ => throw new ArgumentOutOfRangeException(nameof(address), address, null)
         };
     }
 }

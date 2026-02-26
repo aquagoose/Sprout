@@ -48,13 +48,16 @@ internal sealed unsafe class GLTexture : Texture
                 Filter.Point => TextureMagFilter.Nearest,
                 _ => throw new ArgumentOutOfRangeException()
             };
+
+            TextureWrapMode wrapS = value.AddressU.ToGL();
+            TextureWrapMode wrapT = value.AddressV.ToGL();
             
             _gl.BindTexture(TextureTarget.Texture2D, Texture);
             
             _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int) minFilter);
             _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int) magFilter);
-            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int) TextureWrapMode.Repeat);
-            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int) TextureWrapMode.Repeat);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int) wrapS);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int) wrapT);
         }
     }
 

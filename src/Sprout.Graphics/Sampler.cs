@@ -8,14 +8,26 @@ public struct Sampler
 
     public Filter MipFilter;
 
-    public Sampler(Filter minFilter, Filter magFilter, Filter mipFilter)
+    public TextureAddress AddressU;
+
+    public TextureAddress AddressV;
+
+    public Sampler(Filter minFilter, Filter magFilter, Filter mipFilter, TextureAddress addressU, TextureAddress addressV)
     {
         MinFilter = minFilter;
         MagFilter = magFilter;
         MipFilter = mipFilter;
+        AddressU = addressU;
+        AddressV = addressV;
     }
 
-    public static Sampler Linear => new Sampler(Filter.Linear, Filter.Linear, Filter.Linear);
+    public Sampler(Filter filter, TextureAddress address) : this(filter, filter, filter, address, address) { }
 
-    public static Sampler Point => new Sampler(Filter.Point, Filter.Point, Filter.Point);
+    public static Sampler LinearWrap => new Sampler(Filter.Linear, TextureAddress.Repeat);
+
+    public static Sampler LinearClamp => new Sampler(Filter.Linear, TextureAddress.ClampToEdge);
+
+    public static Sampler PointWrap => new Sampler(Filter.Point, TextureAddress.Repeat);
+
+    public static Sampler PointClamp => new Sampler(Filter.Point, TextureAddress.ClampToEdge);
 }

@@ -25,6 +25,18 @@ public class StreamSound : IDisposable
 
     public ulong LoopEnd;
 
+    public float Volume
+    {
+        get => _source.Volume;
+        set => _source.Volume = value;
+    }
+    
+    public double Speed
+    {
+        get => _source.Speed;
+        set => _source.Speed = value;
+    }
+
     public StreamSound(Context context, string path)
     {
         if (!File.Exists(path))
@@ -112,7 +124,6 @@ public class StreamSound : IDisposable
 
     public void Play()
     {
-        _source.Speed = 1;
         _source.Play();
     }
 

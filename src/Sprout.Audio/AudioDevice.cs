@@ -40,6 +40,11 @@ public class AudioDevice : IDisposable
         _context.Dispose();
     }
 
+    public Sound CreateSound(string path)
+    {
+        return new Sound(_context, path);
+    }
+
     public StreamSound CreateStreamSound(string path)
     {
         return new StreamSound(_context, path);

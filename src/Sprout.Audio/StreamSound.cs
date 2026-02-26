@@ -37,23 +37,15 @@ public class StreamSound : IDisposable
         set => _source.Speed = value;
     }
 
-    public StreamSound(Context context, string path)
+    internal StreamSound(Context context, string path)
     {
         if (!File.Exists(path))
             throw new FileNotFoundException(null, path);
 
         _context = context;
-        
-        _stream = Path.GetExtension(path) switch
-        {
-            ".wav" => new Wav(path),
-            ".ogg" => new Vorbis(path),
-            ".mp3" => new Mp3(path),
-            ".flac" => new Flac(path)
-        };
-        
+
+        _stream = StreamUtils.CreateStream(path);
         _format = _stream.Format;
-        // TODO: GetPCM is broken
         
         SourceDescription description = new()
         {

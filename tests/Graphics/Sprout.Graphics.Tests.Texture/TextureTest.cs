@@ -70,7 +70,7 @@ public class TextureTest() : TestBase("Texture Test")
         {
             _rotation -= float.Pi * 2;
             _pointSampler = !_pointSampler;
-            _texture.Sampler = _pointSampler ? Sampler.Point : Sampler.Linear;
+            _texture.Sampler = _pointSampler ? Sampler.PointWrap : Sampler.LinearWrap;
         }
 
         Device.Clear(Color.CornflowerBlue);

@@ -11,7 +11,7 @@ public class Scene : IDisposable
 
     protected Window Window => App.Window;
 
-    protected GraphicsDevice Device => App.Device;
+    protected GraphicsDevice Graphics => App.Graphics;
 
     protected AudioDevice Audio => App.Audio;
 

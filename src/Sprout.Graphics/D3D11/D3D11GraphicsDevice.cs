@@ -33,8 +33,27 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
     public override Backend Backend => Backend.D3D11;
 
     public override Size SwapchainSize => _swapchainSize;
-    
-    public override Viewport Viewport { get; set; }
+
+    public override Viewport Viewport
+    {
+        get;
+        set
+        {
+            field = value;
+            
+            D3D11_VIEWPORT viewport = new()
+            {
+                TopLeftX = value.X,
+                TopLeftY = value.Y,
+                Width = value.Width,
+                Height = value.Height,
+                MinDepth = 0,
+                MaxDepth = 1
+            };
+
+            Context->RSSetViewports(1, &viewport);
+        }
+    }
 
     public D3D11GraphicsDevice(IntPtr sdlWindow)
     {
@@ -91,6 +110,8 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         fixed (ID3D11RenderTargetView** swapchainTarget = &_swapchainTarget)
             Device->CreateRenderTargetView((ID3D11Resource*) _swapchainTexture, null, swapchainTarget)
                 .Check("Create swapchain target");
+
+        Viewport = new Viewport(0, 0, (uint) width, (uint) height);
     }
     
     public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
@@ -138,7 +159,25 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
 
     public override void ResizeSwapchain(uint width, uint height)
     {
-        throw new NotImplementedException();
+        Context->ClearState();
+        _swapchainTarget->Release();
+        _swapchainTexture->Release();
+        
+        _swapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0).Check("Resize swapchain");
+
+        fixed (ID3D11Texture2D** swapchainTexture = &_swapchainTexture)
+        {
+            _swapChain->GetBuffer(0, Windows.__uuidof<ID3D11Texture2D>(), (void**) swapchainTexture)
+                .Check("Get swapchain texture");
+        }
+
+        fixed (ID3D11RenderTargetView** swapchainTarget = &_swapchainTarget)
+        {
+            Device->CreateRenderTargetView((ID3D11Resource*) _swapchainTexture, null, swapchainTarget)
+                .Check("Create swapchain target");
+        }
+
+        _swapchainSize = new Size((int) width, (int) height);
     }
 
     public ID3D11SamplerState* GetSampler(Sampler sampler)
@@ -165,6 +204,7 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
             Filter = filter,
             AddressU = sampler.AddressU.ToD3D(),
             AddressV = sampler.AddressV.ToD3D(),
+            AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
             MinLOD = 0,
             MaxLOD = float.MaxValue
         };

@@ -17,7 +17,7 @@ public class RenderTextureTest() : TestBase("Render Texture Test")
         _texture = Device.CreateTexture("DEBUG.png");
         _renderTexture =
             Device.CreateTexture(128, 128, PixelFormat.RGBA8, TextureUsage.RenderTexture | TextureUsage.Shader);
-        _renderTexture.Sampler = Sampler.Point;
+        _renderTexture.Sampler = Sampler.PointWrap;
     }
 
     protected override void Loop(float dt)

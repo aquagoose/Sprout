@@ -16,7 +16,7 @@ public abstract class App : IDisposable
 
     public Window Window => _window;
 
-    public GraphicsDevice Device => _graphicsDevice;
+    public GraphicsDevice Graphics => _graphicsDevice;
 
     public AudioDevice Audio => _audioDevice;
 

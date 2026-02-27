@@ -44,6 +44,9 @@ public class EventManager : IDisposable
                 case SDL.EventType.Quit:
                     Quit();
                     break;
+                case SDL.EventType.WindowResized:
+                    _window.InvokeResized();
+                    break;
                 
                 case SDL.EventType.KeyDown:
                     if (winEvent.Key.Repeat)

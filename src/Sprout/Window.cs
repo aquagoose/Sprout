@@ -6,6 +6,8 @@ namespace Sprout;
 
 public sealed class Window : IDisposable
 {
+    public event OnResized Resized;
+    
     private readonly IntPtr _window;
 
     public IntPtr Handle => _window;
@@ -30,6 +32,8 @@ public sealed class Window : IDisposable
         SDL.WindowFlags flags = SDL.WindowFlags.HighPixelDensity;
         if (info.Resizable)
             flags |= SDL.WindowFlags.Resizable;
+        if (info.Fullscreen)
+            flags |= SDL.WindowFlags.Fullscreen;
         
         switch (backend)
         {
@@ -59,11 +63,22 @@ public sealed class Window : IDisposable
         _window = SDL.CreateWindow(info.Title, info.Size.Width, info.Size.Height, flags);
         if (_window == 0)
             throw new Exception($"Failed to create SDL window: {SDL.GetError()}");
+
+        Resized = delegate { };
     }
 
     public void Dispose()
     {
+        Resized = delegate { };
         SDL.DestroyWindow(_window);
         SDL.Quit();
     }
+
+    internal void InvokeResized()
+    {
+        Size size = Size;
+        Resized((uint) size.Width, (uint) size.Height);
+    }
+
+    public delegate void OnResized(uint width, uint height);
 }

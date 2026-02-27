@@ -44,6 +44,8 @@ public abstract class App : IDisposable
         }
 
         _window = new Window(in info.Window, backend);
+        _window.Resized += WindowOnResized;
+        
         _graphicsDevice = GraphicsDevice.Create(_window.Handle, backend);
         _audioDevice = new AudioDevice();
 
@@ -84,5 +86,10 @@ public abstract class App : IDisposable
         _audioDevice.Dispose();
         _graphicsDevice.Dispose();
         _window.Dispose();
+    }
+    
+    private void WindowOnResized(uint width, uint height)
+    {
+        Graphics.ResizeSwapchain(width, height);
     }
 }

@@ -123,10 +123,11 @@ public class StreamSound : IDisposable
     {
         FinishedPlaying = delegate { };
         
+        _source.Dispose();
+        
         foreach (AudioBuffer buffer in _audioBuffers)
             buffer.Dispose();
         
-        _source.Dispose();
         _stream.Dispose();
     }
 

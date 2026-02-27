@@ -34,6 +34,11 @@ public abstract class GraphicsDevice : IDisposable
     /// Gets and sets the viewport.
     /// </summary>
     public abstract Viewport Viewport { get; set; }
+    
+    /// <summary>
+    /// Gets and sets the current <see cref="Graphics.BlendMode"/>.
+    /// </summary>
+    public abstract BlendMode BlendMode { get; set; }
 
     public abstract Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments);
 

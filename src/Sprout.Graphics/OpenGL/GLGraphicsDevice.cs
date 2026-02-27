@@ -40,6 +40,25 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         }
     }
 
+    public override BlendMode BlendMode
+    {
+        get;
+        set
+        {
+            field = value;
+
+            if (!value.Enabled)
+            {
+                _gl.Disable(EnableCap.Blend);
+                return;
+            }
+            
+            _gl.Enable(EnableCap.Blend);
+            _gl.BlendFuncSeparate(value.Src.ToGL(), value.Dest.ToGL(), value.SrcAlpha.ToGL(), value.DestAlpha.ToGL());
+            _gl.BlendEquationSeparate(value.BlendOp.ToGL(), value.BlendOpAlpha.ToGL());
+        }
+    }
+
     public GLGraphicsDevice(IntPtr sdlWindow)
     {
         _sdlWindow = sdlWindow;
@@ -57,9 +76,7 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         SDL.GetWindowSizeInPixels(_sdlWindow, out int w, out int h);
         _swapchainSize = new Size(w, h);
         Viewport = new Viewport(0, 0, (uint) w, (uint) h);
-        
-        _gl.Enable(EnableCap.Blend);
-        _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        BlendMode = BlendMode.Disabled;
     }
 
     public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)

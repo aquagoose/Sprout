@@ -60,7 +60,8 @@ public sealed class Window : IDisposable
                 throw new ArgumentOutOfRangeException(nameof(backend), backend, null);
         }
         
-        _window = SDL.CreateWindow(info.Title, info.Size.Width, info.Size.Height, flags);
+        string title = $"{info.Title} ({backend})";
+        _window = SDL.CreateWindow(title, info.Size.Width, info.Size.Height, flags);
         if (_window == 0)
             throw new Exception($"Failed to create SDL window: {SDL.GetError()}");
 

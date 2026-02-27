@@ -126,8 +126,9 @@ public class SpriteRenderer : IDisposable
         _drawList.Clear();
     }
 
-    public void Render(Matrix4x4? transform = null, Matrix4x4? projection = null)
+    public void Render(Matrix4x4? transform = null, BlendMode? blendMode = null, Matrix4x4? projection = null)
     {
+        _device.BlendMode = blendMode ?? BlendMode.NonPremultiplied;
         Viewport viewport = _device.Viewport;
 
         TransformMatrices matrices = new TransformMatrices(

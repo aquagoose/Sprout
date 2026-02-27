@@ -64,6 +64,8 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
     public override Size SwapchainSize => new Size((int) _swapchainSize.Width, (int) _swapchainSize.Height);
     
     public override Viewport Viewport { get; set; }
+    
+    public override BlendMode BlendMode { get; set; }
 
     public VkGraphicsDevice(IntPtr sdlWindow)
     {

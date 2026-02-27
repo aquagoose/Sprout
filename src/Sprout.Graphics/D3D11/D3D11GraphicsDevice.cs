@@ -4,6 +4,7 @@ using SDL3;
 using TerraFX.Interop.DirectX;
 using TerraFX.Interop.Windows;
 using static TerraFX.Interop.DirectX.D3D_FEATURE_LEVEL;
+using static TerraFX.Interop.DirectX.D3D11_COLOR_WRITE_ENABLE;
 using static TerraFX.Interop.DirectX.D3D11_CREATE_DEVICE_FLAG;
 using static TerraFX.Interop.DirectX.D3D11_FILTER;
 using static TerraFX.Interop.DirectX.D3D11_TEXTURE_ADDRESS_MODE;
@@ -32,6 +33,7 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
     private uint _numBoundRenderTargets;
     
     private readonly Dictionary<Sampler, D3D11Sampler> _samplers;
+    private readonly Dictionary<BlendMode, D3D11BlendState> _blendStates;
     
     public readonly ID3D11Device* Device;
     public readonly ID3D11DeviceContext* Context;
@@ -61,9 +63,49 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         }
     }
 
+    public override BlendMode BlendMode
+    {
+        get;
+        set
+        {
+            field = value;
+            if (!_blendStates.TryGetValue(value, out D3D11BlendState state))
+            {
+                Console.WriteLine("Create blend state");
+                
+                D3D11_RENDER_TARGET_BLEND_DESC targetBlend = new()
+                {
+                    BlendEnable = value.Enabled,
+                    SrcBlend = value.Src.ToD3D(),
+                    DestBlend = value.Dest.ToD3D(),
+                    BlendOp = value.BlendOp.ToD3D(),
+                    SrcBlendAlpha = value.SrcAlpha.ToD3D(),
+                    DestBlendAlpha = value.DestAlpha.ToD3D(),
+                    BlendOpAlpha = value.BlendOpAlpha.ToD3D(),
+                    RenderTargetWriteMask = (byte) D3D11_COLOR_WRITE_ENABLE_ALL
+                };
+
+                D3D11_BLEND_DESC blendDesc = new()
+                {
+                    IndependentBlendEnable = false
+                };
+                blendDesc.RenderTarget[0] = targetBlend;
+
+                ID3D11BlendState* blendState;
+                Device->CreateBlendState(&blendDesc, &blendState).Check("Create blend state");
+                state = new D3D11BlendState(blendState);
+                _blendStates.Add(value, state);
+            }
+
+            Context->OMSetBlendState(state.BlendState, null, uint.MaxValue);
+        }
+    }
+
     public D3D11GraphicsDevice(IntPtr sdlWindow)
     {
+        _currentRenderTargets = new ID3D11RenderTargetView*[MaxRenderTargets];
         _samplers = [];
+        _blendStates = [];
         
         IntPtr hwnd;
         if (OperatingSystem.IsWindows())
@@ -116,8 +158,7 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         fixed (ID3D11RenderTargetView** swapchainTarget = &_swapchainTarget)
             Device->CreateRenderTargetView((ID3D11Resource*) _swapchainTexture, null, swapchainTarget)
                 .Check("Create swapchain target");
-
-        _currentRenderTargets = new ID3D11RenderTargetView*[MaxRenderTargets];
+        
         Viewport = new Viewport(0, 0, (uint) width, (uint) height);
     }
     
@@ -259,13 +300,13 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         Device->Release();
     }
 
-    public struct D3D11Sampler
+    private struct D3D11Sampler(ID3D11SamplerState* sampler)
     {
-        public readonly ID3D11SamplerState* Sampler;
+        public readonly ID3D11SamplerState* Sampler = sampler;
+    }
 
-        public D3D11Sampler(ID3D11SamplerState* sampler)
-        {
-            Sampler = sampler;
-        }
+    private struct D3D11BlendState(ID3D11BlendState* blendState)
+    {
+        public readonly ID3D11BlendState* BlendState = blendState;
     }
 }

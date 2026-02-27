@@ -1,6 +1,6 @@
 namespace Sprout.Graphics;
 
-public struct Sampler
+public struct Sampler : IEquatable<Sampler>
 {
     public Filter MinFilter;
 
@@ -30,4 +30,30 @@ public struct Sampler
     public static Sampler PointWrap => new Sampler(Filter.Point, TextureAddress.Repeat);
 
     public static Sampler PointClamp => new Sampler(Filter.Point, TextureAddress.ClampToEdge);
+
+    public bool Equals(Sampler other)
+    {
+        return MinFilter == other.MinFilter && MagFilter == other.MagFilter && MipFilter == other.MipFilter &&
+               AddressU == other.AddressU && AddressV == other.AddressV;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Sampler other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine((int) MinFilter, (int) MagFilter, (int) MipFilter, (int) AddressU, (int) AddressV);
+    }
+
+    public static bool operator ==(Sampler left, Sampler right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Sampler left, Sampler right)
+    {
+        return !left.Equals(right);
+    }
 }

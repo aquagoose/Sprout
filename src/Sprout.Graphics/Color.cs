@@ -27,6 +27,18 @@ public struct Color
         A = a * multiplier;
     }
 
+    public Color(uint packedARGB)
+    {
+        if (packedARGB < 0x01000000 && packedARGB != 0)
+            packedARGB |= 0xFF000000;
+        
+        const float multiplier = 1.0f / byte.MaxValue;
+        A = ((packedARGB >> 24) & 0xFF) * multiplier;
+        R = ((packedARGB >> 16) & 0xFF) * multiplier;
+        G = ((packedARGB >> 8) & 0xFF) * multiplier;
+        B = (packedARGB & 0xFF) * multiplier;
+    }
+
     public static Color FromHSV(float h, float s, float v)
     {
         const float degs0 = 0;

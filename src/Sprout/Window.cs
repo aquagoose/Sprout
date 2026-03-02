@@ -22,6 +22,12 @@ public sealed class Window : IDisposable
         set => SDL.SetWindowSize(_window, value.Width, value.Height);
     }
 
+    public bool Fullscreen
+    {
+        get => (SDL.GetWindowFlags(_window) & SDL.WindowFlags.Fullscreen) != 0;
+        set => SDL.SetWindowFullscreen(_window, value);
+    }
+
     public float PixelDensity => SDL.GetWindowPixelDensity(_window);
 
     public Window(in WindowInfo info, Backend backend)

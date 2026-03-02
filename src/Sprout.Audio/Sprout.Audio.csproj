@@ -3,7 +3,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="MixrSharp" Version="0.1.0" />
+    <PackageReference Include="MixrSharp" Version="0.1.1" />
     <PackageReference Include="SDL3-CS" Version="3.3.7" />
   </ItemGroup>
 </Project>

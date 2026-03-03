@@ -8,6 +8,7 @@ public class Sound : IDisposable
     private readonly Context _context;
     private readonly AudioFormat _format;
     private readonly AudioBuffer _buffer;
+    private readonly List<SoundInstance> _instances;
     
     internal Sound(Context context, string path)
     {
@@ -22,6 +23,7 @@ public class Sound : IDisposable
         stream.GetBuffer(buffer);
 
         _buffer = _context.CreateBuffer(buffer);
+        _instances = [];
     }
 
     public SoundInstance Play(float volume = 1.0f, double speed = 1.0)
@@ -36,6 +38,7 @@ public class Sound : IDisposable
         source.Speed = speed;
         source.SubmitBuffer(_buffer);
         SoundInstance instance = new SoundInstance(source);
+        _instances.Add(instance);
         // TODO: This implementation is absolutely god awful!! I hate it
         instance.FinishedPlaying += InstanceOnFinishedPlaying;
         instance.Play();
@@ -46,11 +49,15 @@ public class Sound : IDisposable
     private void InstanceOnFinishedPlaying(SoundInstance instance)
     {
         Console.WriteLine("Finished");
+        _instances.Remove(instance);
         instance.Dispose();
     }
 
     public void Dispose()
     {
+        foreach (SoundInstance instance in _instances)
+            instance.Dispose();
+        
         _buffer.Dispose();
     }
 }

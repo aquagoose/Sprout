@@ -71,7 +71,7 @@ public class StreamSound : IDisposable
 
     private void SourceOnBufferFinished()
     {
-        ulong loopEnd = LoopEnd == 0 ? _stream.LengthInSamples * _format.BytesPerSample * _format.Channels : LoopEnd;
+        ulong loopEnd = LoopEnd == 0 ? _stream.LengthInSamples : LoopEnd;
         
         ulong bytePos = _stream.PositionInSamples * _format.BytesPerSample * _format.Channels;
         ulong bytesReceived = _stream.GetBuffer(_buffer);

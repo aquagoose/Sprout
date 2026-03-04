@@ -17,12 +17,9 @@ public class Sound : IDisposable
         using AudioStream stream = StreamUtils.CreateStream(path);
         _format = stream.Format;
         
-        // TODO: GetPCM is broken
-        ulong bufferSize = stream.LengthInSamples * _format.BytesPerSample * _format.Channels;
-        byte[] buffer = new byte[bufferSize];
-        stream.GetBuffer(buffer);
-
+        byte[] buffer = stream.GetPcm();
         _buffer = _context.CreateBuffer(buffer);
+        
         _instances = [];
     }
 

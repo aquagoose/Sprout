@@ -1,6 +1,6 @@
 namespace Sprout.Graphics;
 
-public struct Color
+public struct Color : IEquatable<Color>
 {
     public float R;
 
@@ -807,4 +807,29 @@ public struct Color
     /// YellowGreen has an RGB value of 154, 205, 50 (0x9ACD32)
     /// </summary>
     public static Color YellowGreen => new Color(0.6039215686274509f, 0.803921568627451f, 0.19607843137254902f);
+
+    public bool Equals(Color other)
+    {
+        return R.Equals(other.R) && G.Equals(other.G) && B.Equals(other.B) && A.Equals(other.A);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Color other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(R, G, B, A);
+    }
+
+    public static bool operator ==(Color left, Color right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Color left, Color right)
+    {
+        return !left.Equals(right);
+    }
 }

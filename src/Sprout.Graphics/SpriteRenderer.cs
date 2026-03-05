@@ -94,6 +94,10 @@ public class SpriteRenderer : IDisposable
         _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
     }
 
+    public void Draw(Texture texture, Rectangle region, Rectangle? source = null, Color? tint = null,
+        SpriteFlip flip = SpriteFlip.None)
+        => Draw(texture, new Vector2(region.X, region.Y), region.Size, source, tint, flip);
+
     public void Draw(Texture texture, Matrix3x2 transform, Rectangle? source = null, Color? tint = null,
         SpriteFlip flip = SpriteFlip.None)
     {

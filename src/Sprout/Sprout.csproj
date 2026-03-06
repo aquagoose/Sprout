@@ -5,6 +5,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Sprout.Audio\Sprout.Audio.csproj" />
+    <ProjectReference Include="..\Sprout.Content\Sprout.Content.csproj" />
     <ProjectReference Include="..\Sprout.Graphics\Sprout.Graphics.csproj" />
   </ItemGroup>
 </Project>

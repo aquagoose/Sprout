@@ -36,4 +36,8 @@
       <EmbeddedResource Include="Shaders/*.pcsh" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Sprout.Content\Sprout.Content.csproj" />
+    </ItemGroup>
+
 </Project>

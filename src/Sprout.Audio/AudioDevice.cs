@@ -1,5 +1,6 @@
 ﻿using MixrSharp;
 using SDL3;
+using Sprout.Content;
 
 namespace Sprout.Audio;
 
@@ -42,17 +43,17 @@ public class AudioDevice : IDisposable
 
     public Sound CreateSound(string path)
     {
-        return new Sound(_context, path);
+        return new Sound(_context, PathUtils.GetFullPath(path));
     }
 
     public StreamSound CreateStreamSound(string path)
     {
-        return new StreamSound(_context, path);
+        return new StreamSound(_context, PathUtils.GetFullPath(path));
     }
 
     public void PlaySoundOneShot(string path)
     {
-        StreamSound sound = new StreamSound(_context, path);
+        StreamSound sound = new StreamSound(_context, PathUtils.GetFullPath(path));
         sound.FinishedPlaying += SoundOnFinishedPlaying;
         _singleFireSounds.Add(sound);
         sound.Play();

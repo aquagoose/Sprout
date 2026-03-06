@@ -1,4 +1,5 @@
 using System.Reflection;
+using Sprout.Content;
 
 namespace Sprout.Graphics;
 
@@ -27,7 +28,7 @@ public class PreCompiledShader
 
     public void Save(string path)
     {
-        using FileStream stream = File.OpenWrite(path);
+        using FileStream stream = File.OpenWrite(PathUtils.GetFullPath(path));
         using BinaryWriter writer = new BinaryWriter(stream);
         
         writer.Write(Magic);
@@ -76,7 +77,7 @@ public class PreCompiledShader
 
     public static PreCompiledShader FromFile(string path)
     {
-        using FileStream stream = File.OpenRead(path);
+        using FileStream stream = File.OpenRead(PathUtils.GetFullPath(path));
         return FromStream(stream);
     }
 

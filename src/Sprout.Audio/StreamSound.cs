@@ -71,18 +71,21 @@ public class StreamSound : IDisposable
 
     private void SourceOnBufferFinished()
     {
-        ulong loopEnd = LoopEnd == 0 ? _stream.LengthInSamples : LoopEnd;
-        
         ulong bytePos = _stream.PositionInSamples * _format.BytesPerSample * _format.Channels;
         ulong bytesReceived = _stream.GetBuffer(_buffer);
-        ulong loopEndBytes = loopEnd * _format.BytesPerSample * _format.Channels;
         
         byte[] buffer = _buffer;
-        if (Looping && bytePos + bytesReceived > loopEndBytes)
+
+        if (LoopEnd != 0)
         {
-            ulong length = loopEndBytes - bytePos;
-            buffer = _buffer[..(int) length];
-            _stream.SeekToSample(LoopStart);
+            ulong loopEnd = LoopEnd == 0 ? _stream.LengthInSamples : LoopEnd;
+            ulong loopEndBytes = loopEnd * _format.BytesPerSample * _format.Channels;
+            if (Looping && bytePos + bytesReceived > loopEndBytes)
+            {
+                ulong length = loopEndBytes - bytePos;
+                buffer = _buffer[..(int) length];
+                _stream.SeekToSample(LoopStart);
+            }
         }
         
         if (bytesReceived < (ulong) _buffer.Length)

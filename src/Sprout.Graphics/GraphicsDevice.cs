@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using Sprout.Content;
 using Sprout.Graphics.D3D11;
 using Sprout.Graphics.OpenGL;
 using Sprout.Graphics.Vulkan;
@@ -59,7 +60,7 @@ public abstract class GraphicsDevice : IDisposable
 
     public Texture CreateTexture(string path, TextureUsage usage = DefaultTextureUsage)
     {
-        using FileStream stream = File.OpenRead(path);
+        using FileStream stream = File.OpenRead(PathUtils.GetFullPath(path));
         ImageResult result = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
         return CreateTexture((uint) result.Width, (uint) result.Height, PixelFormat.RGBA8, result.Data, usage);
     }

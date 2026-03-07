@@ -4,6 +4,7 @@ project(Sprout)
 set(CMAKE_CXX_STANDARD 17)
 
 option(SPROUT_RENDERER_SDLGPU "Enable the SDL_GPU render backend" ON)
+option(SPROUT_BUILD_TESTS "Build the tests" ON)
 
 file(GLOB SPROUT_SRC CONFIGURE_DEPENDS
         include/Sprout/*.h
@@ -31,4 +32,8 @@ target_link_libraries(Sprout PUBLIC SDL3::SDL3)
 
 if (SPROUT_RENDERER_SDLGPU)
     target_compile_definitions(Sprout PUBLIC SPROUT_RENDERER_SDLGPU)
+endif ()
+
+if (SPROUT_BUILD_TESTS)
+    add_subdirectory(tests)
 endif ()

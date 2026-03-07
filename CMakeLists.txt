@@ -18,3 +18,6 @@ list(APPEND SPROUT_SRC ${SPROUT_GRAPHICS_SRC})
 
 add_library(Sprout STATIC ${SPROUT_SRC})
 target_include_directories(Sprout PUBLIC include)
+
+add_subdirectory(external/SDL)
+target_link_libraries(Sprout PUBLIC SDL3::SDL3)

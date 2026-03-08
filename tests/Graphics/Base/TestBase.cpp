@@ -14,7 +14,7 @@ void TestBase::Run(const std::string& testName)
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
         throw std::runtime_error("Failed to initialize SDL: " + std::string(SDL_GetError()));
 
-    _window = SDL_CreateWindow(testName.c_str(), 1280, 720, 0);
+    _window = SDL_CreateWindow(testName.c_str(), 800, 600, 0);
     if (!_window)
         throw std::runtime_error("Failed to create window: " + std::string(SDL_GetError()));
 

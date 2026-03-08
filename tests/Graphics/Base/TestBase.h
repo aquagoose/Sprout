@@ -11,7 +11,7 @@ class TestBase
     std::unique_ptr<Sprout::GraphicsDevice> _graphicsDevice;
 
 protected:
-    [[nodiscard]] Sprout::GraphicsDevice* Device() const { return _graphicsDevice.get(); }
+    [[nodiscard]] Sprout::GraphicsDevice& Device() const { return *_graphicsDevice; }
 
     virtual void Load() {}
     virtual void Loop(float dt) {}

@@ -4,6 +4,7 @@
 
 TestBase::~TestBase()
 {
+    _graphicsDevice.reset();
     SDL_DestroyWindow(_window);
     SDL_Quit();
 }
@@ -16,6 +17,8 @@ void TestBase::Run(const std::string& testName)
     _window = SDL_CreateWindow(testName.c_str(), 1280, 720, 0);
     if (!_window)
         throw std::runtime_error("Failed to create window: " + std::string(SDL_GetError()));
+
+    _graphicsDevice = Sprout::GraphicsDevice::Create(_window);
 
     Load();
 

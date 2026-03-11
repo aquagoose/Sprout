@@ -1,5 +1,6 @@
 #include "SDLGraphicsDevice.h"
 #include "SDLUtils.h"
+#include "SDLShader.h"
 
 namespace Sprout::SDL
 {
@@ -66,6 +67,11 @@ namespace Sprout::SDL
     {
         SDL_ReleaseWindowFromGPUDevice(_device, _window);
         SDL_DestroyGPUDevice(_device);
+    }
+
+    std::unique_ptr<Shader> SDLGraphicsDevice::CreateShader(const ShaderInfo& info)
+    {
+        return std::make_unique<SDLShader>(_device, info);
     }
 
     void SDLGraphicsDevice::Clear(const Color& color)

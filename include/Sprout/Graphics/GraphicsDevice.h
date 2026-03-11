@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Color.h"
+#include "Shader.h"
 
 #include <SDL3/SDL.h>
 
@@ -32,8 +33,9 @@ namespace Sprout
     public:
         virtual ~GraphicsDevice() = default;
 
-        virtual void Clear(const Color& color) = 0;
+        virtual std::unique_ptr<Shader> CreateShader(const ShaderInfo& info) = 0;
 
+        virtual void Clear(const Color& color) = 0;
         virtual void Present() = 0;
 
         static std::unique_ptr<GraphicsDevice> Create(SDL_Window* window, Backend backend = Backend::Unknown);

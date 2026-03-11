@@ -32,8 +32,9 @@ namespace Sprout::SDL
         explicit SDLGraphicsDevice(SDL_Window* window);
         ~SDLGraphicsDevice() override;
 
-        void Clear(const Color& color) override;
+        std::unique_ptr<Shader> CreateShader(const ShaderInfo& info) override;
 
+        void Clear(const Color& color) override;
         void Present() override;
     };
 }

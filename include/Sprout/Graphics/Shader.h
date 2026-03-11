@@ -6,6 +6,12 @@
 
 namespace Sprout
 {
+    enum class ShaderStage
+    {
+        Vertex,
+        Pixel
+    };
+
     struct ShaderAttachment
     {
         uint8_t* Code;

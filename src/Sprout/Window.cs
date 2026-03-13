@@ -12,6 +12,12 @@ public sealed class Window : IDisposable
 
     public IntPtr Handle => _window;
 
+    public string Title
+    {
+        get => SDL.GetWindowTitle(_window);
+        set => SDL.SetWindowTitle(_window, value);
+    }
+
     public Size Size
     {
         get
@@ -66,7 +72,7 @@ public sealed class Window : IDisposable
                 throw new ArgumentOutOfRangeException(nameof(backend), backend, null);
         }
         
-        string title = $"{info.Title} ({backend})";
+        string title = $"{info.Title}";
         _window = SDL.CreateWindow(title, info.Size.Width, info.Size.Height, flags);
         if (_window == 0)
             throw new Exception($"Failed to create SDL window: {SDL.GetError()}");

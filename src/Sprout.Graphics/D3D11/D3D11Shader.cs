@@ -130,6 +130,7 @@ internal sealed unsafe class D3D11Shader : Shader
         
         D3D11Texture d3dTexture = (D3D11Texture) texture;
         uniform.CurrentTexture = d3dTexture.TextureSrv;
+        uniform.CurrentSampler = _device.GetSampler(d3dTexture.Sampler);
     }
 
     

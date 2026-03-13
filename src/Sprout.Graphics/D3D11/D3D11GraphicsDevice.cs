@@ -162,9 +162,9 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         Viewport = new Viewport(0, 0, (uint) width, (uint) height);
     }
     
-    public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
+    public override Shader CreateShader(in ShaderInfo info)
     {
-        return new D3D11Shader(Device, attachments);
+        return new D3D11Shader(this, in info);
     }
     
     protected override Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage, void* data)
@@ -174,7 +174,7 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
     
     public override Renderable CreateRenderable(in RenderableInfo info)
     {
-        return new D3D11Renderable(this, in info);
+        return new D3D11Renderable(Device, Context, in info);
     }
 
     public override void SetRenderTextures(ReadOnlySpan<Texture> colorTextures)

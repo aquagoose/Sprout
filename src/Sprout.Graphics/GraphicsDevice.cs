@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 using Sprout.Content;
-//using Sprout.Graphics.D3D11;
+using Sprout.Graphics.D3D11;
 using Sprout.Graphics.OpenGL;
 //using Sprout.Graphics.Vulkan;
 using StbImageSharp;
@@ -121,7 +121,7 @@ public abstract class GraphicsDevice : IDisposable
         {
             //Backend.Vulkan => new VkGraphicsDevice(sdlWindow),
             Backend.OpenGL => new GLGraphicsDevice(sdlWindow),
-            //Backend.D3D11 => new D3D11GraphicsDevice(sdlWindow),
+            Backend.D3D11 => new D3D11GraphicsDevice(sdlWindow),
             _ => throw new ArgumentOutOfRangeException(nameof(backend), backend, null)
         };
     }

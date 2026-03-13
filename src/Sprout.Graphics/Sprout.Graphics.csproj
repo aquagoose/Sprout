@@ -20,7 +20,6 @@
     
     <ItemGroup>
       <Compile Remove="Vulkan/**/*" />
-      <Compile Remove="D3D11/**/*" />
       <!--<None Update="libVulkanMemoryAllocator.so">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>

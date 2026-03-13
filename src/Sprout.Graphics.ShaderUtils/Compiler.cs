@@ -31,7 +31,7 @@ public static class Compiler
 
         return backend switch
         {
-            Backend.Vulkan => HlslToSpirv(stage, hlsl, entryPoint, includeDirectory),
+            //Backend.Vulkan => HlslToSpirv(stage, hlsl, entryPoint, includeDirectory),
             Backend.OpenGL => SpirvToGLSL(stage, spirv, entryPoint),
             Backend.D3D11 => HlslToDXBC(stage, hlsl, entryPoint, includeDirectory),
             _ => throw new ArgumentOutOfRangeException(nameof(backend), backend, null)

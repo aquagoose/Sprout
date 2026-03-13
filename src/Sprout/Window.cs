@@ -45,9 +45,9 @@ public sealed class Window : IDisposable
         {
             case Backend.Unknown:
                 break;
-            case Backend.Vulkan:
+            /*case Backend.Vulkan:
                 flags |= SDL.WindowFlags.Vulkan;
-                break;
+                break;*/
             case Backend.D3D11:
                 break;
             case Backend.OpenGL:

@@ -15,7 +15,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="libVulkanMemoryAllocator.so">
+        <ProjectReference Include="..\Sprout.Content\Sprout.Content.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Compile Remove="Vulkan/**/*" />
+      <!--<None Update="libVulkanMemoryAllocator.so">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="libVulkanMemoryAllocator.dylib">
@@ -29,15 +34,11 @@
       </None>
       <None Update="VulkanMemoryAllocator.dll">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+      </None>-->
     </ItemGroup>
 
     <ItemGroup>
       <EmbeddedResource Include="Shaders/*.pcsh" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Sprout.Content\Sprout.Content.csproj" />
     </ItemGroup>
 
 </Project>

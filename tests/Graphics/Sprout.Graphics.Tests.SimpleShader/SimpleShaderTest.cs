@@ -15,8 +15,13 @@ public class SimpleShaderTest() : TestBase("Simple Shader Test")
         byte[] vtx = Compiler.TranspileHLSL(Device.Backend, ShaderStage.Vertex, hlsl, "VSMain");
         byte[] pxl = Compiler.TranspileHLSL(Device.Backend, ShaderStage.Pixel, hlsl, "PSMain");
 
-        _shader = Device.CreateShader(new ShaderAttachment(ShaderStage.Vertex, vtx, "VSMain"),
-            new ShaderAttachment(ShaderStage.Pixel, pxl, "PSMain"));
+        ShaderInfo shaderInfo = new()
+        {
+            VertexShader = new ShaderAttachment(vtx, "VSMain"),
+            PixelShader = new ShaderAttachment(pxl, "PSMain")
+        };
+        
+        _shader = Device.CreateShader(in shaderInfo);
 
         RenderableInfo info = new()
         {

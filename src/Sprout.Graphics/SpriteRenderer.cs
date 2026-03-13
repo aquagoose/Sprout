@@ -32,10 +32,20 @@ public class SpriteRenderer : IDisposable
         byte[] vertexShader = pcsh.GetSource(device.Backend, ShaderStage.Vertex, out string vertexEntry);
         byte[] pixelShader = pcsh.GetSource(device.Backend, ShaderStage.Pixel, out string pixelEntry);
 
-        _shader = device.CreateShader(new ShaderAttachment(ShaderStage.Vertex, vertexShader, vertexEntry),
-            new ShaderAttachment(ShaderStage.Pixel, pixelShader, pixelEntry));
+        ShaderInfo shaderInfo = new()
+        {
+            VertexShader = new ShaderAttachment(vertexShader, vertexEntry),
+            PixelShader = new ShaderAttachment(pixelShader, pixelEntry),
+            Uniforms =
+            [
+                new Uniform(0, UniformType.ConstantBuffer, TransformMatrices.SizeInBytes), // TransformMatrices
+                new Uniform(1, UniformType.Texture) // Texture
+            ]
+        };
+        
+        _shader = device.CreateShader(in shaderInfo);
 
-        RenderableInfo info = new()
+        RenderableInfo renderableInfo = new()
         {
             NumVertices = NumVertices * MaxSpritesPerBatch,
             NumIndices = NumIndices * MaxSpritesPerBatch,
@@ -47,15 +57,10 @@ public class SpriteRenderer : IDisposable
                 new VertexAttribute(1, Semantic.TexCoord, 0, AttributeType.Float2, 8), // TexCoord
                 new VertexAttribute(2, Semantic.Color, 0, AttributeType.Float4, 16) // Tint
             ],
-            Uniforms =
-            [
-                new Uniform(0, UniformType.ConstantBuffer, TransformMatrices.SizeInBytes), // TransformMatrices
-                new Uniform(1, UniformType.Texture) // Texture
-            ],
             Dynamic = true
         };
 
-        _renderable = device.CreateRenderable(in info);
+        _renderable = device.CreateRenderable(in renderableInfo);
 
         _vertices = new Vertex[NumVertices * MaxSpritesPerBatch];
         _indices = new uint[NumIndices * MaxSpritesPerBatch];
@@ -139,7 +144,7 @@ public class SpriteRenderer : IDisposable
             projection ?? Matrix4x4.CreateOrthographicOffCenter(0, viewport.Width, viewport.Height, 0, -1, 1),
             transform ?? Matrix4x4.Identity);
         
-        _renderable.PushUniformData(0, matrices);
+        _shader.PushUniformData(0, matrices);
         
         Texture? currentTexture = null;
         uint currentDraw = 0;
@@ -241,7 +246,7 @@ public class SpriteRenderer : IDisposable
         _renderable.UpdateVertices(0, _vertices);
         _renderable.UpdateIndices(0, _indices);
         
-        _renderable.PushTexture(1, texture);
+        _shader.PushTexture(1, texture);
         _renderable.Draw(numDraws * NumIndices);
     }
     

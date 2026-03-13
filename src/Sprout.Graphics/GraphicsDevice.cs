@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 using Sprout.Content;
-using Sprout.Graphics.D3D11;
+//using Sprout.Graphics.D3D11;
 using Sprout.Graphics.OpenGL;
 //using Sprout.Graphics.Vulkan;
 using StbImageSharp;
@@ -41,7 +41,7 @@ public abstract class GraphicsDevice : IDisposable
     /// </summary>
     public abstract BlendMode BlendMode { get; set; }
 
-    public abstract Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments);
+    public abstract Shader CreateShader(in ShaderInfo info);
 
     protected abstract unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage, void* data);
 
@@ -121,7 +121,7 @@ public abstract class GraphicsDevice : IDisposable
         {
             //Backend.Vulkan => new VkGraphicsDevice(sdlWindow),
             Backend.OpenGL => new GLGraphicsDevice(sdlWindow),
-            Backend.D3D11 => new D3D11GraphicsDevice(sdlWindow),
+            //Backend.D3D11 => new D3D11GraphicsDevice(sdlWindow),
             _ => throw new ArgumentOutOfRangeException(nameof(backend), backend, null)
         };
     }

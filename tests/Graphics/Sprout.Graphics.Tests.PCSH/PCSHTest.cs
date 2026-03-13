@@ -14,8 +14,13 @@ public class PCSHTest() : TestBase("PCSH Test")
         byte[] vtxSrc = pcsh.GetSource(Device.Backend, ShaderStage.Vertex, out string vtxEntry);
         byte[] pxlSrc = pcsh.GetSource(Device.Backend, ShaderStage.Pixel, out string pxlEntry);
 
-        _shader = Device.CreateShader(new ShaderAttachment(ShaderStage.Vertex, vtxSrc, vtxEntry),
-            new ShaderAttachment(ShaderStage.Pixel, pxlSrc, pxlEntry));
+        ShaderInfo shaderInfo = new()
+        {
+            VertexShader = new ShaderAttachment(vtxSrc, vtxEntry),
+            PixelShader = new ShaderAttachment(pxlSrc, pxlEntry)
+        };
+        
+        _shader = Device.CreateShader(in shaderInfo);
 
         RenderableInfo info = new()
         {

@@ -23,8 +23,18 @@ public class TextureTest() : TestBase("Texture Test")
         byte[] vtx = Compiler.TranspileHLSL(Device.Backend, ShaderStage.Vertex, hlsl, "VSMain");
         byte[] pxl = Compiler.TranspileHLSL(Device.Backend, ShaderStage.Pixel, hlsl, "PSMain");
 
-        _shader = Device.CreateShader(new ShaderAttachment(ShaderStage.Vertex, vtx, "VSMain"),
-            new ShaderAttachment(ShaderStage.Pixel, pxl, "PSMain"));
+        ShaderInfo shaderInfo = new()
+        {
+            VertexShader = new ShaderAttachment(vtx, "VSMain"),
+            PixelShader = new ShaderAttachment(pxl, "PSMain"),
+            Uniforms =
+            [
+                Uniform.Texture(0),
+                Uniform.ConstantBuffer<Matrix4x4>(1)
+            ]
+        };
+        
+        _shader = Device.CreateShader(in shaderInfo);
         
         ReadOnlySpan<float> vertices =
         [
@@ -51,11 +61,6 @@ public class TextureTest() : TestBase("Texture Test")
                 new VertexAttribute(0, Semantic.Position, 0, AttributeType.Float2, 0),
                 new VertexAttribute(1, Semantic.TexCoord, 0, AttributeType.Float2, 8)
             ],
-            Uniforms =
-            [
-                Uniform.Texture(0),
-                Uniform.ConstantBuffer<Matrix4x4>(1)
-            ]
         };
 
         _renderable = Device.CreateRenderable(in info);
@@ -74,10 +79,10 @@ public class TextureTest() : TestBase("Texture Test")
         }
 
         Device.Clear(Color.CornflowerBlue);
-        _renderable.PushTexture(0, _texture);
-        _renderable.PushUniformData(1, Matrix4x4.CreateRotationZ(_rotation));
+        _shader.PushTexture(0, _texture);
+        _shader.PushUniformData(1, Matrix4x4.CreateRotationZ(_rotation));
         _renderable.Draw();
-        _renderable.PushUniformData(1, Matrix4x4.CreateRotationZ(-_rotation));
+        _shader.PushUniformData(1, Matrix4x4.CreateRotationZ(-_rotation));
         _renderable.Draw();
         Device.Present();
     }

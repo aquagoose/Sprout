@@ -79,9 +79,9 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         BlendMode = BlendMode.Disabled;
     }
 
-    public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
+    public override Shader CreateShader(in ShaderInfo info)
     {
-        return new GLShader(_gl, in attachments);
+        return new GLShader(_gl, in info);
     }
 
     protected override unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage,

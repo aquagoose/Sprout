@@ -41,13 +41,47 @@ public abstract class GraphicsDevice : IDisposable
     /// </summary>
     public abstract BlendMode BlendMode { get; set; }
 
+    /// <summary>
+    /// Create a graphics <see cref="Shader"/>.
+    /// </summary>
+    /// <param name="info">The <see cref="ShaderInfo"/> to use when creating the shader.</param>
+    /// <returns>The created <see cref="Shader"/>.</returns>
     public abstract Shader CreateShader(in ShaderInfo info);
 
+    /// <summary>
+    /// Create a <see cref="Texture"/>, with data from an unmanaged pointer.
+    /// </summary>
+    /// <param name="width">The width, in pixels.</param>
+    /// <param name="height">The height, in pixels.</param>
+    /// <param name="format">The texture's <see cref="PixelFormat"/>.</param>
+    /// <param name="usage">The <see cref="TextureUsage"/> describing how the texture will be used on the GPU.</param>
+    /// <param name="data">A pointer to some data. The size of this data MUST equal
+    /// <b>width * height * format.BytesPerPixel</b>. Pass <see langword="null"/> to create an empty texture.</param>
+    /// <returns>The created <see cref="Texture"/>.</returns>
     protected abstract unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage, void* data);
 
+    /// <summary>
+    /// Create an empty <see cref="Texture"/>.
+    /// </summary>
+    /// <param name="width">The width, in pixels.</param>
+    /// <param name="height">The height, in pixels.</param>
+    /// <param name="format">The texture's <see cref="PixelFormat"/>.</param>
+    /// <param name="usage">The <see cref="TextureUsage"/> describing how the texture will be used on the GPU.</param>
+    /// <returns>The created <see cref="Texture"/>.</returns>
     public unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage = DefaultTextureUsage)
         => CreateTexture(width, height, format, usage, null);
 
+    /// <summary>
+    /// Create a <see cref="Texture"/>.
+    /// </summary>
+    /// <param name="width">The width, in pixels.</param>
+    /// <param name="height">The height, in pixels.</param>
+    /// <param name="format">The texture's <see cref="PixelFormat"/>.</param>
+    /// <param name="data">The texture's initial data.</param>
+    /// <param name="usage">The <see cref="TextureUsage"/> describing how the texture will be used on the GPU.</param>
+    /// <typeparam name="T">An unmanaged type that will be used as the texture's data type as described in the
+    /// <paramref name="format"/>.</typeparam>
+    /// <returns>The created <see cref="Texture"/>.</returns>
     public unsafe Texture CreateTexture<T>(uint width, uint height, PixelFormat format, ReadOnlySpan<T> data, TextureUsage usage = DefaultTextureUsage)
         where T : unmanaged
     {
@@ -55,9 +89,26 @@ public abstract class GraphicsDevice : IDisposable
             return CreateTexture(width, height, format, usage, pData);
     }
 
+    /// <summary>
+    /// Create a <see cref="Texture"/>.
+    /// </summary>
+    /// <param name="width">The width, in pixels.</param>
+    /// <param name="height">The height, in pixels.</param>
+    /// <param name="format">The texture's <see cref="PixelFormat"/>.</param>
+    /// <param name="data">The texture's initial data.</param>
+    /// <param name="usage">The <see cref="TextureUsage"/> describing how the texture will be used on the GPU.</param>
+    /// <typeparam name="T">An unmanaged type that will be used as the texture's data type as described in the
+    /// <paramref name="format"/>.</typeparam>
+    /// <returns>The created <see cref="Texture"/>.</returns>
     public Texture CreateTexture<T>(uint width, uint height, PixelFormat format, T[] data, TextureUsage usage = DefaultTextureUsage) where T : unmanaged
         => CreateTexture(width, height, format, data.AsSpan(), usage);
 
+    /// <summary>
+    /// Create a <see cref="Texture"/> from an image file.
+    /// </summary>
+    /// <param name="path">The path to the image file.</param>
+    /// <param name="usage">The <see cref="TextureUsage"/> describing how the texture will be used on the GPU.</param>
+    /// <returns>The created <see cref="Texture"/>.</returns>
     public Texture CreateTexture(string path, TextureUsage usage = DefaultTextureUsage)
     {
         using FileStream stream = File.OpenRead(PathUtils.GetFullPath(path));
@@ -65,6 +116,11 @@ public abstract class GraphicsDevice : IDisposable
         return CreateTexture((uint) result.Width, (uint) result.Height, PixelFormat.RGBA8, result.Data, usage);
     }
 
+    /// <summary>
+    /// Create a <see cref="Renderable"/>.
+    /// </summary>
+    /// <param name="info">The <see cref="RenderableInfo"/> that describes the renderable to create.</param>
+    /// <returns>The created <see cref="Renderable"/>.</returns>
     public abstract Renderable CreateRenderable(in RenderableInfo info);
 
     /// <summary>

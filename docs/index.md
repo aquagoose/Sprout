@@ -2,10 +2,9 @@
 _layout: landing
 ---
 
-# This is the **HOMEPAGE**.
+# Sprout Game Framework
 
-Refer to [Markdown](http://daringfireball.net/projects/markdown/) for how to write markdown files.
+Sprout is a simple, cross-platform game framework allowing you to easily create amazing games. But despite its
+simplicity, it can still handle powerful 2D and 3D graphics.
 
-## Quick Start Notes:
-
-1. Add images to the *images* folder if the file is referencing an image.
+![Pong](images/Pong.png)

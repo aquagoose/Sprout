@@ -8,7 +8,7 @@ public abstract class Renderable : IDisposable
     /// Gets if this <see cref="Renderable"/> has been disposed.
     /// </summary>
     public abstract bool IsDisposed { get; protected set; }
-
+    
     public abstract void UpdateVertices<T>(uint offset, ReadOnlySpan<T> vertices) where T : unmanaged;
 
     public abstract void UpdateIndices(uint offset, ReadOnlySpan<uint> indices);

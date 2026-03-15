@@ -1,6 +1,8 @@
 using System.Drawing;
 using System.Numerics;
+using System.Text;
 using FreeTypeSharp;
+using Sprout.Content;
 using static FreeTypeSharp.FT_Error;
 using static FreeTypeSharp.FT_LOAD;
 using static FreeTypeSharp.FT;
@@ -12,6 +14,7 @@ public sealed unsafe class Font : IDisposable
     private const uint Spacing = 1;
     
     private readonly GraphicsDevice _device;
+    private readonly bool _antialias;
     private readonly uint _textureWidth;
     private readonly uint _textureHeight;
     
@@ -23,13 +26,19 @@ public sealed unsafe class Font : IDisposable
     private uint _atlasY;
     private uint _maxCharSize;
     
-    public Font(GraphicsDevice device, ReadOnlySpan<byte> path, uint textureWidth = 1024, uint textureHeight = 1024)
+    public Font(GraphicsDevice device, string path, bool antialias = true, uint textureWidth = 1024,
+        uint textureHeight = 1024)
     {
         _device = device;
+        _antialias = antialias;
         _textureWidth = textureWidth;
         _textureHeight = textureHeight;
+
+        string fullPath = PathUtils.GetFullPath(path);
+        Span<byte> fullPathBytes = stackalloc byte[fullPath.Length + 1];
+        Encoding.UTF8.GetBytes(fullPath, fullPathBytes);
         
-        fixed (byte* pPath = path)
+        fixed (byte* pPath = fullPathBytes)
         fixed (FT_FaceRec_** face = &_face)
             CheckError(FT_New_Face(_library, pPath, 0, face), "New face");
 
@@ -87,7 +96,11 @@ public sealed unsafe class Font : IDisposable
         _maxCharSize = uint.Max(_maxCharSize, size);
 
         CheckError(FT_Set_Pixel_Sizes(_face, 0, size), "Set pixel size");
-        FT_Load_Char(_face, c, FT_LOAD_RENDER);
+        FT_LOAD flags = FT_LOAD_RENDER;
+        if (!_antialias)
+            flags |= FT_LOAD_MONOCHROME;
+
+        FT_Load_Char(_face, c, flags);
 
         FT_GlyphSlotRec_* slot = _face->glyph;
         FT_Bitmap_ bitmap = slot->bitmap;
@@ -119,7 +132,16 @@ public sealed unsafe class Font : IDisposable
         {
             for (int x = 0; x < bitmap.width; x++)
             {
-                byte b = bitmap.buffer[y * bitmap.width + x];
+                byte b;
+                if (_antialias)
+                    b = bitmap.buffer[y * bitmap.width + x];
+                else
+                {
+                    byte* row = &bitmap.buffer[bitmap.pitch * y];
+                    // Copied directly from Pie cause as the comment there said... wtf???
+                    b = (byte) ((row[x >> 3] & (128 >> (x & 7))) != 0 ? 255 : 0);
+                }
+
                 bitmapData[(y * bitmap.width + x) * 4 + 0] = 255; // R
                 bitmapData[(y * bitmap.width + x) * 4 + 1] = 255; // G
                 bitmapData[(y * bitmap.width + x) * 4 + 2] = 255; // B

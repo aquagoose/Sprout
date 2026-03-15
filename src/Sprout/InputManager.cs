@@ -15,6 +15,8 @@ public class InputManager : IDisposable
     private Vector2 _mousePosition;
     private Vector2 _mouseDelta;
 
+    public Matrix4x4 MouseMatrix;
+    
     public Vector2 MousePosition => _mousePosition;
 
     public Vector2 MouseDelta => _mouseDelta;
@@ -22,6 +24,7 @@ public class InputManager : IDisposable
     public InputManager(EventManager eventManager)
     {
         _eventManager = eventManager;
+        MouseMatrix = Matrix4x4.Identity;
         
         _keysDown = [];
         _newKeysDown = [];
@@ -86,7 +89,7 @@ public class InputManager : IDisposable
     
     private void EventManagerOnMouseMove(Vector2 mousePos, Vector2 mouseDelta)
     {
-        _mousePosition = mousePos;
+        _mousePosition = Vector2.Transform(mousePos, MouseMatrix);
         _mouseDelta += mouseDelta;
     }
 }

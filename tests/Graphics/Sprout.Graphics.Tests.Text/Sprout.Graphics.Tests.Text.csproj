@@ -5,15 +5,10 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <!--<PublishAot>true</PublishAot>-->
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Sprout\Sprout.csproj" />
-    </ItemGroup>
-    
-    <ItemGroup>
-        <Content Include="Content/**/*" CopyToOutputDirectory="PreserveNewest" />
+      <ProjectReference Include="..\Sprout.Graphics.Tests.Base\Sprout.Graphics.Tests.Base.csproj" />
     </ItemGroup>
 
 </Project>

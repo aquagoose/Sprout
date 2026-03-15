@@ -7,6 +7,11 @@ namespace Sprout.Graphics;
 /// </summary>
 public abstract class Texture : IDisposable
 {
+    /// <summary>
+    /// Gets if this <see cref="Texture"/> has been disposed.
+    /// </summary>
+    public abstract bool IsDisposed { get; protected set; }
+    
     public readonly Size Size;
 
     public readonly PixelFormat Format;
@@ -21,14 +26,12 @@ public abstract class Texture : IDisposable
         Format = format;
         Usage = usage;
     }
-    
-    /// <summary>
-    /// Gets if this <see cref="Texture"/> has been disposed.
-    /// </summary>
-    public abstract bool IsDisposed { get; protected set; }
 
     /// <summary>
     /// Dispose of this <see cref="Texture"/>.
     /// </summary>
     public abstract void Dispose();
+
+    public abstract void Update<T>(uint x, uint y, uint width, uint height, uint mipLevel, in ReadOnlySpan<T> data)
+        where T : unmanaged;
 }

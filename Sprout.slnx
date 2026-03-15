@@ -11,6 +11,7 @@
     <Project Path="tests/Graphics/Sprout.Graphics.Tests.SimpleShader/Sprout.Graphics.Tests.SimpleShader.csproj" />
     <Project Path="tests/Graphics/Sprout.Graphics.Tests.SpritePerformance/Sprout.Graphics.Tests.SpritePerformance.csproj" />
     <Project Path="tests/Graphics/Sprout.Graphics.Tests.SpriteRenderer/Sprout.Graphics.Tests.SpriteRenderer.csproj" />
+    <Project Path="tests/Graphics/Sprout.Graphics.Tests.Text/Sprout.Graphics.Tests.Text.csproj" />
     <Project Path="tests/Graphics/Sprout.Graphics.Tests.Texture/Sprout.Graphics.Tests.Texture.csproj" />
     <Project Path="tests\Graphics\Sprout.Graphics.Tests.ClearColor\Sprout.Graphics.Tests.ClearColor.csproj" />
   </Folder>

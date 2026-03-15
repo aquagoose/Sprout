@@ -107,4 +107,9 @@ internal sealed unsafe class D3D11Texture : Texture
             TextureSrv->Release();
         Texture->Release();
     }
+
+    public override void Update<T>(uint x, uint y, uint width, uint height, uint mipLevel, in ReadOnlySpan<T> data)
+    {
+        throw new NotImplementedException();
+    }
 }

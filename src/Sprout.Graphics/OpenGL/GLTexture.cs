@@ -9,6 +9,8 @@ internal sealed unsafe class GLTexture : Texture
     public override bool IsDisposed { get; protected set; }
 
     private readonly GL _gl;
+    private readonly Silk.NET.OpenGL.PixelFormat _format;
+    private readonly PixelType _pixelType;
     
     public readonly uint Texture;
     public readonly bool IsRenderbuffer;
@@ -69,7 +71,7 @@ internal sealed unsafe class GLTexture : Texture
         
         _gl = gl;
 
-        (Silk.NET.OpenGL.PixelFormat fmt, InternalFormat iFmt, PixelType type) = format switch
+        (_format, InternalFormat iFmt, _pixelType) = format switch
         {
             PixelFormat.RGBA8 => (Silk.NET.OpenGL.PixelFormat.Rgba, InternalFormat.Rgba8, PixelType.UnsignedByte),
             _ => throw new ArgumentOutOfRangeException(nameof(format), format, null)
@@ -91,7 +93,7 @@ internal sealed unsafe class GLTexture : Texture
         {
             Texture = _gl.GenTexture();
             _gl.BindTexture(TextureTarget.Texture2D, Texture);
-            _gl.TexImage2D(TextureTarget.Texture2D, 0, iFmt, width, height, 0, fmt, type, pData);
+            _gl.TexImage2D(TextureTarget.Texture2D, 0, iFmt, width, height, 0, _format, _pixelType, pData);
             
             if ((Usage & TextureUsage.GenerateMipmaps) != 0 && (Usage & TextureUsage.RenderTexture) == 0)
                 _gl.GenerateMipmap(TextureTarget.Texture2D);
@@ -111,5 +113,15 @@ internal sealed unsafe class GLTexture : Texture
             _gl.DeleteRenderbuffer(Texture);
         else
             _gl.DeleteTexture(Texture);
+    }
+
+    public override void Update<T>(uint x, uint y, uint width, uint height, uint mipLevel, in ReadOnlySpan<T> data)
+    {
+        _gl.BindTexture(TextureTarget.Texture2D, Texture);
+        fixed (void* pData = data)
+        {
+            _gl.TexSubImage2D(TextureTarget.Texture2D, (int) mipLevel, (int) x, (int) y, width, height, _format,
+                _pixelType, pData);
+        }
     }
 }

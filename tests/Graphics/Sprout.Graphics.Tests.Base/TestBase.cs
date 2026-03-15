@@ -65,7 +65,7 @@ public abstract class TestBase(string testName) : IDisposable
             backend = (Backend) buttonId;
         }
 
-        SDL.WindowFlags flags = SDL.WindowFlags.Resizable;
+        SDL.WindowFlags flags = SDL.WindowFlags.Resizable | SDL.WindowFlags.HighPixelDensity;
 
         switch (backend)
         {

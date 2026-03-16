@@ -46,14 +46,14 @@ public class AudioDevice : IDisposable
         return new Sound(_context, PathUtils.GetFullPath(path));
     }
 
-    public StreamSound CreateStreamSound(string path)
+    public StreamSound CreateStreamSound(string path, bool looping = false, uint loopStart = 0, uint loopEnd = 0)
     {
-        return new StreamSound(_context, PathUtils.GetFullPath(path));
+        return new StreamSound(_context, PathUtils.GetFullPath(path), looping, loopStart, loopEnd);
     }
 
     public void PlaySoundOneShot(string path)
     {
-        StreamSound sound = new StreamSound(_context, PathUtils.GetFullPath(path));
+        StreamSound sound = new StreamSound(_context, PathUtils.GetFullPath(path), false, 0, 0);
         sound.FinishedPlaying += SoundOnFinishedPlaying;
         _singleFireSounds.Add(sound);
         sound.Play();

@@ -37,12 +37,21 @@ public class StreamSound : IDisposable
         set => _source.Speed = value;
     }
 
-    internal StreamSound(Context context, string path)
+    public bool IsPlaying => _source.State == SourceState.Playing;
+
+    public bool IsPaused => _source.State == SourceState.Paused;
+
+    public bool IsStopped => _source.State == SourceState.Stopped;
+
+    internal StreamSound(Context context, string path, bool looping, uint loopStart, uint loopEnd)
     {
         if (!File.Exists(path))
             throw new FileNotFoundException(null, path);
 
         _context = context;
+        Looping = looping;
+        LoopStart = loopStart;
+        LoopEnd = loopEnd;
 
         _stream = StreamUtils.CreateStream(path);
         _format = _stream.Format;
@@ -61,12 +70,7 @@ public class StreamSound : IDisposable
         _buffer = new byte[_format.BytesPerSample * _format.Channels * 24000];
         
         _audioBuffers = new AudioBuffer[NumBuffers];
-        for (int i = 0; i < _audioBuffers.Length; i++)
-        {
-            _stream.GetBuffer(_buffer);
-            _audioBuffers[i] = _context.CreateBuffer(_buffer);
-            _source.SubmitBuffer(_audioBuffers[i]);
-        }
+        Stop();
     }
 
     private void SourceOnBufferFinished()
@@ -122,6 +126,30 @@ public class StreamSound : IDisposable
     public void Play()
     {
         _source.Play();
+    }
+
+    public void Pause()
+    {
+        _source.Pause();
+    }
+
+    public void Stop()
+    {
+        _source.Stop();
+        _stream.Restart();
+        _currentBuffer = 0;
+        for (int i = 0; i < _audioBuffers.Length; i++)
+        {
+            _stream.GetBuffer(_buffer);
+            _audioBuffers[i] = _context.CreateBuffer(_buffer);
+            _source.SubmitBuffer(_audioBuffers[i]);
+        }
+    }
+
+    public void Restart()
+    {
+        Stop();
+        Play();
     }
 
     public void Dispose()

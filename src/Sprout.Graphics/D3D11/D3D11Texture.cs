@@ -14,6 +14,8 @@ internal sealed unsafe class D3D11Texture : Texture
 {
     public override bool IsDisposed { get; protected set; }
 
+    private readonly ID3D11DeviceContext* _context;
+    
     public readonly ID3D11Texture2D* Texture;
     public readonly ID3D11ShaderResourceView* TextureSrv;
     public readonly ID3D11RenderTargetView* RenderTarget;
@@ -23,6 +25,8 @@ internal sealed unsafe class D3D11Texture : Texture
     public D3D11Texture(ID3D11Device* device, ID3D11DeviceContext* context, uint width, uint height, PixelFormat format,
         TextureUsage usage, void* pData) : base(new Size((int) width, (int) height), format, usage)
     {
+        _context = context;
+        
         DXGI_FORMAT dxgiFormat = format switch
         {
             PixelFormat.RGBA8 => DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -110,6 +114,8 @@ internal sealed unsafe class D3D11Texture : Texture
 
     public override void Update<T>(uint x, uint y, uint width, uint height, uint mipLevel, in ReadOnlySpan<T> data)
     {
-        throw new NotImplementedException();
+        D3D11_BOX box = new((int) x, (int) y, 0, (int) (x + width), (int) (y + height), 1);
+        fixed (void* pData = data)
+            _context->UpdateSubresource((ID3D11Resource*) Texture, 0, &box, pData, width * Format.BytesPerPixel, 0);
     }
 }

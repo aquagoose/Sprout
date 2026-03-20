@@ -88,6 +88,30 @@ public sealed unsafe class Font : IDisposable
         }
     }
 
+    public Size MeasureText(uint size, string text)
+    {
+        Vector2 currentPos = Vector2.Zero;
+        Size textSize = new Size();
+        
+        foreach (char c in text)
+        {
+            switch (c)
+            {
+                case '\n':
+                    currentPos.Y += size;
+                    currentPos.X = 0;
+                    continue;
+            }
+            
+            Character character = GetCharacter(size, c);
+            currentPos.X += character.Advance;
+            textSize.Width = int.Max(textSize.Width, (int) currentPos.X);
+            textSize.Height = int.Max(textSize.Height, (int) (currentPos.Y + character.Ascender));
+        }
+
+        return textSize;
+    }
+
     private Character GetCharacter(uint size, char c)
     {
         if (_characters.TryGetValue((size, c), out Character character))

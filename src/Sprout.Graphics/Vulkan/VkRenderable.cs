@@ -12,12 +12,10 @@ internal sealed unsafe class VkRenderable : Renderable
 
     private readonly Vk _vk;
     private readonly VkGraphicsDevice _device;
-
-    private readonly DescriptorSetLayout _descriptorLayout;
+    
     //private readonly DescriptorPool _descriptorPool;
     //private readonly DescriptorSet _descriptorSet;
-
-    private readonly PipelineLayout _layout;
+    
     private readonly Pipeline _pipeline;
 
     private readonly VkBuffer _vertexBuffer;
@@ -29,69 +27,6 @@ internal sealed unsafe class VkRenderable : Renderable
     {
         _vk = vk;
         _device = device;
-
-        if (info.Uniforms != null)
-        {
-            int numUniforms = info.Uniforms?.Length ?? 0;
-            DescriptorSetLayoutBinding* bindings = stackalloc DescriptorSetLayoutBinding[numUniforms];
-
-            for (int i = 0; i < numUniforms; i++)
-            {
-                ref readonly Uniform uniform = ref info.Uniforms![i];
-                
-                bindings[i] = new DescriptorSetLayoutBinding
-                {
-                    Binding = uniform.Index,
-                    DescriptorType = uniform.Type.ToVk(),
-                    DescriptorCount = 1,
-                    StageFlags = ShaderStageFlags.VertexBit | ShaderStageFlags.FragmentBit
-                };
-            }
-
-            DescriptorSetLayoutCreateInfo descriptorLayoutInfo = new()
-            {
-                SType = StructureType.DescriptorSetLayoutCreateInfo,
-                Flags = DescriptorSetLayoutCreateFlags.PushDescriptorBit,
-                BindingCount = (uint) numUniforms,
-                PBindings = bindings,
-            };
-            
-            _vk.CreateDescriptorSetLayout(_device.Device, &descriptorLayoutInfo, null, out _descriptorLayout)
-                .Check("Create descriptor layout");
-
-            DescriptorPoolSize* poolSizes = stackalloc DescriptorPoolSize[numUniforms];
-            for (int i = 0; i < numUniforms; i++)
-            {
-                poolSizes[i] = new DescriptorPoolSize()
-                {
-                    DescriptorCount = 1,
-                    Type = info.Uniforms![i].Type.ToVk()
-                };
-            }
-            
-            /*DescriptorPoolCreateInfo descriptorPoolInfo = new()
-            {
-                SType = StructureType.DescriptorPoolCreateInfo,
-                
-                MaxSets = 1,
-                PoolSizeCount = (uint) numUniforms,
-                PPoolSizes = poolSizes
-            };
-            _vk.CreateDescriptorPool(_device.Device, &descriptorPoolInfo, null, out _descriptorPool)
-                .Check("Create descriptor pool");
-
-            DescriptorSetLayout setLayout = _descriptorLayout;
-            DescriptorSetAllocateInfo setAllocateInfo = new()
-            {
-                SType = StructureType.DescriptorSetAllocateInfo,
-                DescriptorPool = _descriptorPool,
-                PSetLayouts = &setLayout,
-                DescriptorSetCount = 1
-            };
-
-            _vk.AllocateDescriptorSets(_device.Device, &setAllocateInfo, out _descriptorSet)
-                .Check("Create descriptor set");*/
-        }
 
         VkShader shader = (VkShader) info.Shader;
 
@@ -124,34 +59,24 @@ internal sealed unsafe class VkRenderable : Renderable
 
             _numElements = info.NumIndices;
         }
-
-        DescriptorSetLayout descriptorLayout = _descriptorLayout;
-        PipelineLayoutCreateInfo layoutInfo = new()
+        
+        PipelineShaderStageCreateInfo* shaderStages = stackalloc PipelineShaderStageCreateInfo[2]
         {
-            SType = StructureType.PipelineLayoutCreateInfo,
-            SetLayoutCount = _descriptorLayout.Handle == 0 ? 0u : 1u,
-            PSetLayouts = &descriptorLayout
-        };
-        _vk.CreatePipelineLayout(_device.Device, &layoutInfo, null, out _layout).Check("Create pipeline layout");
-
-        int numShaderStages = shader.ShaderModules.Count;
-        PipelineShaderStageCreateInfo* shaderStages = stackalloc PipelineShaderStageCreateInfo[numShaderStages];
-        int currentStage = 0;
-        foreach ((ShaderStage stage, (string entryPoint, ShaderModule module)) in shader.ShaderModules)
-        {
-            shaderStages[currentStage++] = new PipelineShaderStageCreateInfo
+            new PipelineShaderStageCreateInfo
             {
                 SType = StructureType.PipelineShaderStageCreateInfo,
-                Module = module,
-                PName = (byte*) Marshal.StringToHGlobalAnsi(entryPoint),
-                Stage = stage switch
-                {
-                    ShaderStage.Vertex => ShaderStageFlags.VertexBit,
-                    ShaderStage.Pixel => ShaderStageFlags.FragmentBit,
-                    _ => throw new ArgumentOutOfRangeException()
-                }
-            };
-        }
+                Module = shader.VertexModule.Module,
+                PName = (byte*) Marshal.StringToHGlobalAnsi(shader.VertexModule.EntryPoint),
+                Stage = ShaderStageFlags.VertexBit
+            },
+            new PipelineShaderStageCreateInfo
+            {
+                SType = StructureType.PipelineShaderStageCreateInfo,
+                Module = shader.PixelModule.Module,
+                PName = (byte*) Marshal.StringToHGlobalAnsi(shader.PixelModule.EntryPoint),
+                Stage = ShaderStageFlags.FragmentBit
+            },
+        };
 
         int vertexInputLength = info.VertexInput?.Length ?? 0;
         VertexInputAttributeDescription* vertexAttributes =
@@ -264,9 +189,9 @@ internal sealed unsafe class VkRenderable : Renderable
         GraphicsPipelineCreateInfo pipelineInfo = new()
         {
             SType = StructureType.GraphicsPipelineCreateInfo,
-            Layout = _layout,
+            Layout = shader.PipelineLayout,
 
-            StageCount = (uint) numShaderStages,
+            StageCount = 2,
             PStages = shaderStages,
             PVertexInputState = &vertexInputState,
             PInputAssemblyState = &inputAssemblyState,
@@ -293,57 +218,6 @@ internal sealed unsafe class VkRenderable : Renderable
     {
         fixed (void* pVertices = indices)
             _device.CopyToBuffer(_indexBuffer, offset, (uint) (indices.Length * sizeof(uint)), pVertices);
-    }
-
-    public override void PushUniformData(uint index, uint offset, uint sizeInBytes, void* pData)
-    {
-        Buffer uniformBuffer = _device.PushUniform(sizeInBytes, pData, out ulong bufferOffset);
-
-        DescriptorBufferInfo bufferInfo = new()
-        {
-            Buffer = uniformBuffer,
-            Offset = bufferOffset,
-            Range = sizeInBytes
-        };
-
-        WriteDescriptorSet writeDescriptor = new()
-        {
-            SType = StructureType.WriteDescriptorSet,
-            DescriptorType = DescriptorType.UniformBuffer,
-            DstBinding = index,
-            DescriptorCount = 1,
-            PBufferInfo = &bufferInfo
-        };
-
-        _device.KhrPushDescriptor.CmdPushDescriptorSet(_device.CurrentCommandBuffer, PipelineBindPoint.Graphics,
-            _layout, 0, 1, &writeDescriptor);
-    }
-
-    public override void PushTexture(uint index, Texture texture)
-    {
-        VkTexture vkTexture = (VkTexture) texture;
-
-        DescriptorImageInfo imageInfo = new()
-        {
-            ImageView = vkTexture.ImageView,
-            Sampler = _device.GetSampler(texture.Sampler),
-            ImageLayout = ImageLayout.ShaderReadOnlyOptimal
-        };
-
-        WriteDescriptorSet writeDescriptor = new()
-        {
-            SType = StructureType.WriteDescriptorSet,
-            DescriptorType = DescriptorType.CombinedImageSampler,
-            DstBinding = index,
-            DescriptorCount = 1,
-            //DstSet = _descriptorSet,
-            PImageInfo = &imageInfo
-        };
-
-        _device.KhrPushDescriptor.CmdPushDescriptorSet(_device.CurrentCommandBuffer, PipelineBindPoint.Graphics,
-            _layout, 0, 1, &writeDescriptor);
-
-        //_vk.UpdateDescriptorSets(_device.Device, 1, &writeDescriptor, null);
     }
     
     public override void Draw()
@@ -385,8 +259,6 @@ internal sealed unsafe class VkRenderable : Renderable
         if (_indexBuffer.Buffer.Handle != 0)
             vmaDestroyBuffer(_device.Allocator, _indexBuffer.Buffer, _indexBuffer.Allocation);
         
-        _vk.DestroyDescriptorSetLayout(_device.Device, _descriptorLayout, null);
         _vk.DestroyPipeline(_device.Device, _pipeline, null);
-        _vk.DestroyPipelineLayout(_device.Device, _layout, null);
     }
 }

@@ -50,4 +50,9 @@ internal sealed unsafe class VkTexture : Texture
         _vk.DestroyImageView(_device.Device, ImageView, null);
         vmaDestroyImage(_device.Allocator, Image.Image, Image.Allocation);
     }
+
+    public override void Update<T>(uint x, uint y, uint width, uint height, uint mipLevel, in ReadOnlySpan<T> data)
+    {
+        throw new NotImplementedException();
+    }
 }

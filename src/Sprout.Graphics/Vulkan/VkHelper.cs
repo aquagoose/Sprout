@@ -1,4 +1,5 @@
 global using VkFilter = Silk.NET.Vulkan.Filter;
+global using VkShaderModule = Silk.NET.Vulkan.ShaderModule;
 using SDL3;
 using Silk.NET.Core;
 using Silk.NET.Core.Native;
@@ -303,6 +304,24 @@ internal static unsafe class VkHelper
             khrSwapchain.GetSwapchainImages(device, swapchain, &numImages, pImages);
 
         return images;
+    }
+    
+    public static VkShaderModule CreateShaderModule(Vk vk, Device device, byte[] source)
+    {
+        fixed (byte* pSource = source)
+        {
+            ShaderModuleCreateInfo moduleInfo = new()
+            {
+                SType = StructureType.ShaderModuleCreateInfo,
+                CodeSize = (nuint) source.Length,
+                PCode = (uint*) pSource
+            };
+
+            VkShaderModule module;
+            vk.CreateShaderModule(device, &moduleInfo, null, &module).Check("Create shader module");
+
+            return module;
+        }
     }
 
     public static VkImage CreateImage(Allocator* allocator, uint width, uint height, Format format, ImageUsageFlags usage)

@@ -11,7 +11,7 @@ public class TextTest() : TestBase("Text Test")
     protected override void Load()
     {
         _renderer = new SpriteRenderer(Device);
-        _font = new Font(Device, "/Users/aqua/Downloads/Noto_Sans_JP/static/NotoSansJP-Regular.ttf"u8);
+        _font = new Font(Device, "/Users/aqua/Downloads/Noto_Sans_JP/static/NotoSansJP-Regular.ttf");
     }
 
     protected override void Loop(float dt)

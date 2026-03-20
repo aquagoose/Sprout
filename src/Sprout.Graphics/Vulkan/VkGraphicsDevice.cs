@@ -111,9 +111,9 @@ internal sealed unsafe class VkGraphicsDevice : GraphicsDevice
         NextFrame();
     }
     
-    public override Shader CreateShader(params ReadOnlySpan<ShaderAttachment> attachments)
+    public override Shader CreateShader(in ShaderInfo info)
     {
-        return new VkShader(_vk, Device, in attachments);
+        return new VkShader(_vk, this, in info);
     }
     
     protected override Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage, void* data)

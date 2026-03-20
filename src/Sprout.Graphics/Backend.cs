@@ -10,12 +10,12 @@ public enum Backend
     /// </summary>
     Unknown = 0,
     
-    /*/// <summary>
+    /// <summary>
     /// Vulkan 1.3. Runs on most platforms.
     /// </summary>
     Vulkan = 1,
     
-    /// <summary>
+    /*/// <summary>
     /// DirectX 12. Runs on Windows.
     /// </summary>
     D3D12 = 2,

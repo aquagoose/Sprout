@@ -9,18 +9,20 @@ internal sealed class SDLGraphicsDevice : GraphicsDevice
 
     private readonly IntPtr _window;
     private readonly IntPtr _device;
-
-    public IntPtr CommandBuffer;
-    public IntPtr RenderPass;
     private IntPtr _swapchainTexture;
     private bool _hasAttemptedToAcquireSwapchainTextureThisFrame;
+
+    private Size _swapchainSize;
     
     private Color _clearColor;
     private bool _shouldClearThisFrame;
     
-    public override Backend Backend => Backend.SDL;
+    public IntPtr CommandBuffer;
+    public IntPtr RenderPass;
     
-    public override Size SwapchainSize { get; }
+    public override Backend Backend => Backend.SDL;
+
+    public override Size SwapchainSize => _swapchainSize;
     
     public override Viewport Viewport { get; set; }
     
@@ -89,7 +91,7 @@ internal sealed class SDLGraphicsDevice : GraphicsDevice
     
     public override void ResizeSwapchain(uint width, uint height)
     {
-        throw new NotImplementedException();
+        _swapchainSize = new Size((int) width, (int) height);
     }
     
     public override void Dispose()

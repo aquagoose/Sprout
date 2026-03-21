@@ -9,6 +9,14 @@ internal sealed class SDLGraphicsDevice : GraphicsDevice
 
     private readonly IntPtr _window;
     private readonly IntPtr _device;
+
+    public IntPtr CommandBuffer;
+    public IntPtr RenderPass;
+    private IntPtr _swapchainTexture;
+    private bool _hasAttemptedToAcquireSwapchainTextureThisFrame;
+    
+    private Color _clearColor;
+    private bool _shouldClearThisFrame;
     
     public override Backend Backend => Backend.SDL;
     
@@ -43,6 +51,7 @@ internal sealed class SDLGraphicsDevice : GraphicsDevice
     {
         throw new NotImplementedException();
     }
+    
     protected override unsafe Texture CreateTexture(uint width, uint height, PixelFormat format, TextureUsage usage, void* data)
     {
         throw new NotImplementedException();
@@ -60,12 +69,22 @@ internal sealed class SDLGraphicsDevice : GraphicsDevice
     
     public override void Clear(Color color)
     {
-        throw new NotImplementedException();
+        _shouldClearThisFrame = true;
+        _clearColor = color;
     }
     
     public override void Present()
     {
-        throw new NotImplementedException();
+        if (!EnsureInRenderPass())
+        {
+            ResetState();
+            return;
+        }
+        
+        SDL.EndGPURenderPass(RenderPass);
+        SDL.SubmitGPUCommandBuffer(CommandBuffer).Check("Submit command buffer");
+        
+        ResetState();
     }
     
     public override void ResizeSwapchain(uint width, uint height)
@@ -78,5 +97,53 @@ internal sealed class SDLGraphicsDevice : GraphicsDevice
         SDL.WaitForGPUIdle(_device);
         SDL.ReleaseWindowFromGPUDevice(_device, _window);
         SDL.DestroyGPUDevice(_device);
+    }
+    
+    public unsafe bool EnsureInRenderPass()
+    {
+        if (RenderPass != IntPtr.Zero)
+            return true;
+        
+        if (_hasAttemptedToAcquireSwapchainTextureThisFrame)
+            return false;
+        
+        if (CommandBuffer == IntPtr.Zero)
+            CommandBuffer = SDL.AcquireGPUCommandBuffer(_device).Check("Acquire command buffer");
+        
+        if (_swapchainTexture == IntPtr.Zero)
+        {
+            _hasAttemptedToAcquireSwapchainTextureThisFrame = true;
+            SDL.WaitAndAcquireGPUSwapchainTexture(CommandBuffer, _window, out _swapchainTexture, out _, out _)
+                .Check("Acquire swapchain texture");
+
+            if (_swapchainTexture == IntPtr.Zero)
+            {
+                SDL.CancelGPUCommandBuffer(CommandBuffer);
+                CommandBuffer = IntPtr.Zero;
+                return false;
+            }
+        }
+
+        SDL.GPUColorTargetInfo colorTarget = new()
+        {
+            Texture = _swapchainTexture,
+            ClearColor = new SDL.FColor(_clearColor.R, _clearColor.G, _clearColor.B, _clearColor.A),
+            LoadOp = _shouldClearThisFrame ? SDL.GPULoadOp.Clear : SDL.GPULoadOp.Load,
+            StoreOp = SDL.GPUStoreOp.Store
+        };
+
+        RenderPass = SDL.BeginGPURenderPass(CommandBuffer, new IntPtr(&colorTarget), 1, IntPtr.Zero)
+            .Check("Begin render pass");
+
+        return true;
+    }
+
+    private void ResetState()
+    {
+        _shouldClearThisFrame = false;
+        _hasAttemptedToAcquireSwapchainTextureThisFrame = false;
+        RenderPass = IntPtr.Zero;
+        CommandBuffer = IntPtr.Zero;
+        _swapchainTexture = IntPtr.Zero;
     }
 }

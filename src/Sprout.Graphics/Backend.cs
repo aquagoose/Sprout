@@ -39,4 +39,6 @@ public enum Backend
     /// OpenGL ES 2.0. Runs on mobile devices and older desktops. 
     /// </summary>
     OpenGLES = 6*/
+    
+    SDL = 7
 }

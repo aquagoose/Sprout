@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using FreeTypeSharp;
 using Sprout.Content;
@@ -18,9 +19,9 @@ public sealed unsafe class Font : IDisposable
     private readonly uint _textureWidth;
     private readonly uint _textureHeight;
     
-    private readonly FT_FaceRec_* _face;
+    private readonly FaceRec _face;
     private readonly List<Texture> _atlases;
-    private readonly Dictionary<(uint size, char c), Character> _characters;
+    private readonly Dictionary<(uint size, uint c), Character> _characters;
 
     private uint _atlasX;
     private uint _atlasY;
@@ -34,24 +35,35 @@ public sealed unsafe class Font : IDisposable
         _textureWidth = textureWidth;
         _textureHeight = textureHeight;
 
-        string fullPath = PathUtils.GetFullPath(path);
-        Span<byte> fullPathBytes = stackalloc byte[fullPath.Length + 1];
-        Encoding.UTF8.GetBytes(fullPath, fullPathBytes);
-        
-        fixed (byte* pPath = fullPathBytes)
-        fixed (FT_FaceRec_** face = &_face)
-            CheckError(FT_New_Face(_library, pPath, 0, face), "New face");
-
         _atlases = [];
         _characters = [];
+        
+        _face = CreateFace(path);
     }
     
     public void Dispose()
     {
         foreach (Texture texture in _atlases)
             texture.Dispose();
+
+        FaceRec? face = _face;
+        do
+        {
+            CheckError(FT_Done_Face(face.Face), "Done face");
+            face = face.Next;
+        } while (face != null);
+    }
+
+    public void AddFont(string path)
+    {
+        FaceRec faceRec = CreateFace(path);
         
-        CheckError(FT_Done_Face(_face), "Done face");
+        // TODO: Doubly linked list
+        FaceRec face = _face;
+        while (face.Next != null)
+            face = face.Next;
+
+        face.Next = faceRec;
     }
 
     /// <summary>
@@ -65,8 +77,9 @@ public sealed unsafe class Font : IDisposable
     public void Draw(SpriteRenderer renderer, Vector2 position, uint size, string text, Color color)
     {
         Vector2 currentPos = position;
-        
-        foreach (char c in text)
+
+        int i = 0;
+        while (TryGetNextCharacter(text, ref i, out uint c))
         {
             switch (c)
             {
@@ -77,12 +90,13 @@ public sealed unsafe class Font : IDisposable
                 case '\r':
                     continue;
             }
-            
+
             Character character = GetCharacter(size, c);
+
             Texture texture = _atlases[character.TextureIndex];
 
             Vector2 pos = currentPos + new Vector2(character.Bearing.X, -character.Bearing.Y + character.Ascender);
-            
+
             renderer.Draw(texture, pos, source: character.SourceRectangle, tint: color);
             currentPos.X += character.Advance;
         }
@@ -92,8 +106,9 @@ public sealed unsafe class Font : IDisposable
     {
         Vector2 currentPos = Vector2.Zero;
         Size textSize = new Size();
-        
-        foreach (char c in text)
+
+        int i = 0;
+        while (TryGetNextCharacter(text, ref i, out uint c))
         {
             switch (c)
             {
@@ -112,35 +127,40 @@ public sealed unsafe class Font : IDisposable
         return textSize;
     }
 
-    private Character GetCharacter(uint size, char c)
+    private Character GetCharacter(uint size, uint c)
     {
         if (_characters.TryGetValue((size, c), out Character character))
             return character;
 
         _maxCharSize = uint.Max(_maxCharSize, size);
 
-        CheckError(FT_Set_Pixel_Sizes(_face, 0, size), "Set pixel size");
+        // Start at the first face, which is assumed to be the "primary" face.
+        // If it contains the codepoint, great, use that. If not, continue to the next face and try again.
+        FaceRec faceRec = _face;
+        while (FT_Get_Char_Index(faceRec.Face, c) == 0 && faceRec.Next != null)
+            faceRec = faceRec.Next;
+        
+        FT_FaceRec_* face = faceRec.Face;
+
+        CheckError(FT_Set_Pixel_Sizes(face, 0, size), "Set pixel size");
         FT_LOAD flags = FT_LOAD_RENDER;
         if (!_antialias)
             flags |= FT_LOAD_MONOCHROME;
 
-        FT_Load_Char(_face, c, flags);
+        FT_Load_Char(face, c, flags);
 
-        FT_GlyphSlotRec_* slot = _face->glyph;
+        FT_GlyphSlotRec_* slot = face->glyph;
         FT_Bitmap_ bitmap = slot->bitmap;
-        
-        Console.WriteLine(c);
 
         if (_atlasX + bitmap.width >= _textureWidth)
         {
-            Console.WriteLine("New line!");
             _atlasX = 0;
             _atlasY += _maxCharSize;
         }
 
+        // Create a new atlas if the bitmap goes outside the texture.
         if (_atlasY + bitmap.rows >= _textureHeight || _atlases.Count == 0)
         {
-            Console.WriteLine("Create new atlas!");
             _atlasX = 0;
             _atlasY = 0;
             Texture atlas =
@@ -179,13 +199,50 @@ public sealed unsafe class Font : IDisposable
 
         character = new Character(currentAtlas,
             new Rectangle((int) _atlasX, (int) _atlasY, (int) bitmap.width, (int) bitmap.rows),
-            new Vector2(slot->bitmap_left, slot->bitmap_top), (int) (_face->size->metrics.ascender >> 6),
+            new Vector2(slot->bitmap_left, slot->bitmap_top), (int) (face->size->metrics.ascender >> 6),
             (int) (slot->advance.x >> 6));
         _characters.Add((size, c), character);
         
         _atlasX += bitmap.width;
 
         return character;
+    }
+    
+    private FaceRec CreateFace(string path)
+    {
+        string fullPath = PathUtils.GetFullPath(path);
+        Span<byte> fullPathBytes = stackalloc byte[fullPath.Length + 1];
+        Encoding.UTF8.GetBytes(fullPath, fullPathBytes);
+        
+        FT_FaceRec_* faceRec;
+        fixed (byte* pPath = fullPathBytes)
+            CheckError(FT_New_Face(_library, pPath, 0, &faceRec), "New face");
+        return new FaceRec(faceRec);
+    }
+
+    private bool TryGetNextCharacter(string text, ref int i, out uint codePoint)
+    {
+        if (i >= text.Length)
+        {
+            codePoint = 0;
+            return false;
+        }
+
+        char c = text[i];
+        // https://learn.microsoft.com/en-us/dotnet/standard/base-types/character-encoding-introduction#surrogate-pairs
+        // Handle surrogate pairs
+        // If the character is within a certain character range, and the next character is as well, combine them into
+        // a single character. Used for emojis etc.
+        if (c >= '\uD800' && c < '\uDBFF' && i < text.Length && text[i + 1] is >= '\uDC00' and <= '\uDFFF')
+        {
+            codePoint = (uint) (0x10000 + (((uint) c - 0xD800) * 0x0400) + (text[i + 1] - 0xDC00));
+            i++;
+        }
+        else
+            codePoint = c;
+
+        i++;
+        return true;
     }
 
     private static FT_LibraryRec_* _library;
@@ -219,6 +276,19 @@ public sealed unsafe class Font : IDisposable
             Bearing = bearing;
             Ascender = ascender;
             Advance = advance;
+        }
+    }
+
+    // TODO: Struct
+    // Face linked list
+    private class FaceRec
+    {
+        public FT_FaceRec_* Face;
+        public FaceRec? Next;
+
+        public FaceRec(FT_FaceRec_* face)
+        {
+            Face = face;
         }
     }
 }

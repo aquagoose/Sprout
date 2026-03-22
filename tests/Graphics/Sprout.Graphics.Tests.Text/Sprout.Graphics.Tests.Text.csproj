@@ -10,5 +10,9 @@
     <ItemGroup>
       <ProjectReference Include="..\Sprout.Graphics.Tests.Base\Sprout.Graphics.Tests.Base.csproj" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <Content Include="*.ttf" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
 
 </Project>

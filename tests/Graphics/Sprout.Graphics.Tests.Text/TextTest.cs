@@ -11,15 +11,17 @@ public class TextTest() : TestBase("Text Test")
     protected override void Load()
     {
         _renderer = new SpriteRenderer(Device);
-        _font = new Font(Device, "/Users/aqua/Downloads/Noto_Sans_JP/static/NotoSansJP-Regular.ttf");
+        _font = new Font(Device, "NotoSans-Regular.ttf");
+        _font.AddFont("NotoSansJP-Regular.ttf");
+        _font.AddFont("NotoEmoji-Regular.ttf");
     }
 
     protected override void Loop(float dt)
     {
         Device.Clear(Color.CornflowerBlue);
         
-        _font.Draw(_renderer, Vector2.Zero, 48, "Hello world!\nこれは日本語のテキストです！", Color.White);
-        _font.Draw(_renderer, new Vector2(0, 50), 232, "Huge Text Big Large", Color.White);
+        _font.Draw(_renderer, Vector2.Zero, 48, "Hello world!😀🌱👍\nこれは日本語のテキストです！", Color.White);
+        _font.Draw(_renderer, new Vector2(0, 60), 232, "Huge Text Big Large", Color.White);
         _renderer.Render();
         
         Device.Present();

@@ -20,7 +20,7 @@ internal sealed class SDLGraphicsDevice : GraphicsDevice
     public IntPtr CommandBuffer;
     public IntPtr RenderPass;
     
-    public override Backend Backend => Backend.SDL;
+    public override Backend Backend { get; }
 
     public override Size SwapchainSize => _swapchainSize;
     
@@ -28,18 +28,27 @@ internal sealed class SDLGraphicsDevice : GraphicsDevice
     
     public override BlendMode BlendMode { get; set; }
 
-    public SDLGraphicsDevice(IntPtr window)
+    public SDLGraphicsDevice(IntPtr window, Backend backend)
     {
         _window = window;
+        Backend = backend;
 
         uint properties = SDL.CreateProperties();
-        SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersSPIRVBoolean, true);
 
-        //if (OperatingSystem.IsWindows())
-        //    SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersDXBCBoolean, true);
-
-        //if (OperatingSystem.IsMacOS())
-        //    SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersMSLBoolean, true);
+        switch (backend)
+        {
+            case Backend.Vulkan:
+                SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersSPIRVBoolean, true);
+                break;
+            case Backend.D3D12:
+                SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersDXBCBoolean, true);
+                break;
+            case Backend.Metal:
+                SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersMSLBoolean, true);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(backend), backend, null);
+        }
         
 #if DEBUG
         SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateDebugModeBoolean, true);

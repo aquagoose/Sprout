@@ -11,19 +11,19 @@ public enum Backend
     Unknown = 0,
     
     /// <summary>
-    /// Vulkan 1.3. Runs on most platforms.
+    /// Vulkan 1.0. (Through SDL GPU) Runs on most platforms.
     /// </summary>
     Vulkan = 1,
     
-    /*/// <summary>
-    /// DirectX 12. Runs on Windows.
+    /// <summary>
+    /// DirectX 12. (Through SDL GPU) Runs on Windows.
     /// </summary>
     D3D12 = 2,
     
     /// <summary>
-    /// Metal. Runs on Apple devices.
+    /// Metal. (Through SDL GPU) Runs on Apple devices.
     /// </summary>
-    Metal = 3,*/
+    Metal = 3,
     
     /// <summary>
     /// DirectX 11. Runs on Windows.<!-- Has more stable performance than <see cref="D3D12"/>.-->
@@ -39,6 +39,4 @@ public enum Backend
     /// OpenGL ES 2.0. Runs on mobile devices and older desktops. 
     /// </summary>
     OpenGLES = 6*/
-    
-    SDL = 7
 }

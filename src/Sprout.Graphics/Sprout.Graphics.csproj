@@ -18,24 +18,6 @@
     <ItemGroup>
         <ProjectReference Include="..\Sprout.Content\Sprout.Content.csproj" />
     </ItemGroup>
-    
-    <ItemGroup>
-      <None Update="libVulkanMemoryAllocator.so">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="libVulkanMemoryAllocator.dylib">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="libMoltenVK.dylib">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="libvulkan.dylib">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="VulkanMemoryAllocator.dll">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
 
     <ItemGroup>
       <EmbeddedResource Include="Shaders/*.pcsh" />

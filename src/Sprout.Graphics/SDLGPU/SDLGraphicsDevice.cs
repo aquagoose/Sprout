@@ -35,11 +35,11 @@ internal sealed class SDLGraphicsDevice : GraphicsDevice
         uint properties = SDL.CreateProperties();
         SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersSPIRVBoolean, true);
 
-        if (OperatingSystem.IsWindows())
-            SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersDXBCBoolean, true);
+        //if (OperatingSystem.IsWindows())
+        //    SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersDXBCBoolean, true);
 
-        if (OperatingSystem.IsMacOS())
-            SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersMSLBoolean, true);
+        //if (OperatingSystem.IsMacOS())
+        //    SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersMSLBoolean, true);
         
 #if DEBUG
         SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateDebugModeBoolean, true);

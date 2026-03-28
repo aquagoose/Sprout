@@ -199,7 +199,7 @@ public sealed unsafe class Font : IDisposable
 
         character = new Character(currentAtlas,
             new Rectangle((int) _atlasX, (int) _atlasY, (int) bitmap.width, (int) bitmap.rows),
-            new Vector2(slot->bitmap_left, slot->bitmap_top), (int) (face->size->metrics.ascender >> 6),
+            new Vector2(slot->bitmap_left, slot->bitmap_top), (int) ((face->size->metrics.ascender + face->size->metrics.descender) >> 6),
             (int) (slot->advance.x >> 6));
         _characters.Add((size, c), character);
         

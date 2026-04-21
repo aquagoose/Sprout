@@ -38,7 +38,6 @@ public abstract class TestBase(string testName) : IDisposable
             backend = Enum.Parse<Backend>(forceBackend);
         else
         {
-
             Backend[] availableBackends = Enum.GetValues<Backend>();
             int numBackends = availableBackends.Length - 1;
             SDL_MessageBoxButtonData* buttons = stackalloc SDL_MessageBoxButtonData[numBackends];
@@ -69,11 +68,11 @@ public abstract class TestBase(string testName) : IDisposable
 
         switch (backend)
         {
-            /*case Backend.Vulkan:
+            case Backend.Vulkan:
             {
                 flags |= SDL.WindowFlags.Vulkan;
                 break;
-            }*/
+            }
             
             case Backend.OpenGL:
             {

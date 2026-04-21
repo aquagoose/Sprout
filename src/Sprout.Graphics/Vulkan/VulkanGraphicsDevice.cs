@@ -1,10 +1,14 @@
 using System.Drawing;
+using Silk.NET.Vulkan;
 
 namespace Sprout.Graphics.Vulkan;
 
-internal sealed class VulkanGraphicsDevice : GraphicsDevice
+internal sealed unsafe class VulkanGraphicsDevice : GraphicsDevice
 {
     public override bool IsDisposed { get; protected set; }
+
+    private readonly Vk _vk;
+    private readonly Instance _instance;
 
     public override Backend Backend => Backend.Vulkan;
     
@@ -16,7 +20,8 @@ internal sealed class VulkanGraphicsDevice : GraphicsDevice
 
     public VulkanGraphicsDevice(IntPtr sdlWindow)
     {
-        
+        _vk = Vk.GetApi();
+        _instance = VulkanUtils.CreateInstance(_vk, sdlWindow);
     }
     
     public override Shader CreateShader(in ShaderInfo info)
@@ -59,5 +64,8 @@ internal sealed class VulkanGraphicsDevice : GraphicsDevice
         if (IsDisposed)
             return;
         IsDisposed = true;
+        
+        _vk.DestroyInstance(_instance, null);
+        _vk.Dispose();
     }
 }

@@ -4,7 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MixrSharp" Version="0.1.2" />
-    <PackageReference Include="SDL3-CS" Version="3.3.7" />
+    <PackageReference Include="SDL3-CS" Version="3.4.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Sprout.Content\Sprout.Content.csproj" />

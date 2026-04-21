@@ -2,7 +2,6 @@
 using Sprout.Content;
 using Sprout.Graphics.D3D11;
 using Sprout.Graphics.OpenGL;
-using Sprout.Graphics.SDLGPU;
 using StbImageSharp;
 
 namespace Sprout.Graphics;
@@ -175,9 +174,6 @@ public abstract class GraphicsDevice : IDisposable
     {
         return backend switch
         {
-            Backend.Vulkan => new SDLGraphicsDevice(sdlWindow, Backend.Vulkan),
-            Backend.D3D12 => new SDLGraphicsDevice(sdlWindow, Backend.D3D12),
-            Backend.Metal => new SDLGraphicsDevice(sdlWindow, Backend.Metal),
             Backend.D3D11 => new D3D11GraphicsDevice(sdlWindow),
             Backend.OpenGL => new GLGraphicsDevice(sdlWindow),
             _ => throw new ArgumentOutOfRangeException(nameof(backend), backend, null)

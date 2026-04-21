@@ -10,7 +10,7 @@ public enum Backend
     /// </summary>
     Unknown = 0,
     
-    /// <summary>
+    /*/// <summary>
     /// Vulkan 1.0. (Through SDL GPU) Runs on most platforms.
     /// </summary>
     Vulkan = 1,
@@ -23,7 +23,7 @@ public enum Backend
     /// <summary>
     /// Metal. (Through SDL GPU) Runs on Apple devices.
     /// </summary>
-    Metal = 3,
+    Metal = 3,*/
     
     /// <summary>
     /// DirectX 11. Runs on Windows.<!-- Has more stable performance than <see cref="D3D12"/>.-->

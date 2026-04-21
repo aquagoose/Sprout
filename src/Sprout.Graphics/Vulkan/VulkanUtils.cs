@@ -3,6 +3,7 @@ using SDL3;
 using Silk.NET.Core;
 using Silk.NET.Core.Native;
 using Silk.NET.Vulkan;
+using Silk.NET.Vulkan.Extensions.KHR;
 
 namespace Sprout.Graphics.Vulkan;
 
@@ -111,5 +112,55 @@ internal static unsafe class VulkanUtils
         }
 
         throw new NotSupportedException("No supported Vulkan devices were found.");
+    }
+
+    public static Device CreateDevice(Vk vk, PhysicalDevice physicalDevice, ref Queues queues)
+    {
+        string[] extensions = [KhrSwapchain.ExtensionName];
+        nint pExtensions = SilkMarshal.StringArrayToPtr(extensions);
+
+        HashSet<uint> uniqueQueues = queues.UniqueQueues;
+        DeviceQueueCreateInfo* queueInfos = stackalloc DeviceQueueCreateInfo[uniqueQueues.Count];
+        int i = 0;
+        float queuePriority = 1.0f;
+        foreach (uint queue in uniqueQueues)
+        {
+            queueInfos[i++] = new DeviceQueueCreateInfo
+            {
+                SType = StructureType.DeviceQueueCreateInfo,
+                QueueFamilyIndex = queue,
+                QueueCount = 1,
+                PQueuePriorities = &queuePriority
+            };
+        }
+
+        PhysicalDeviceFeatures enabledFeatures = new();
+        
+        DeviceCreateInfo deviceInfo = new()
+        {
+            SType = StructureType.DeviceCreateInfo,
+            
+            PpEnabledExtensionNames = (byte**) pExtensions,
+            EnabledExtensionCount = (uint) extensions.Length,
+            
+            QueueCreateInfoCount = (uint) uniqueQueues.Count,
+            PQueueCreateInfos = queueInfos,
+             
+            PEnabledFeatures = &enabledFeatures
+        };
+
+        PhysicalDeviceDynamicRenderingFeatures dynamicRendering = new()
+        {
+            SType = StructureType.PhysicalDeviceDynamicRenderingFeatures,
+            DynamicRendering = true
+        };
+        deviceInfo.PNext = &dynamicRendering;
+
+        Device device;
+        vk.CreateDevice(physicalDevice, &deviceInfo, null, &device).Check("Create device");
+
+        SilkMarshal.Free(pExtensions);
+
+        return device;
     }
 }

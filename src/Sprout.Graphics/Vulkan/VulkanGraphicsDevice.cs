@@ -12,6 +12,8 @@ internal sealed unsafe class VulkanGraphicsDevice : GraphicsDevice
     private readonly PhysicalDevice _physicalDevice;
     private readonly Queues _queues;
 
+    private readonly Device _device;
+
     public override Backend Backend => Backend.Vulkan;
     
     public override Size SwapchainSize { get; }
@@ -26,7 +28,7 @@ internal sealed unsafe class VulkanGraphicsDevice : GraphicsDevice
         _instance = VulkanUtils.CreateInstance(_vk, sdlWindow);
         _physicalDevice = VulkanUtils.PickPhysicalDevice(_vk, _instance, out _queues, out string deviceName);
         Console.WriteLine(deviceName);
-        
+        _device = VulkanUtils.CreateDevice(_vk, _physicalDevice, ref _queues);
     }
     
     public override Shader CreateShader(in ShaderInfo info)
@@ -70,6 +72,9 @@ internal sealed unsafe class VulkanGraphicsDevice : GraphicsDevice
             return;
         IsDisposed = true;
         
+        _vk.DeviceWaitIdle(_device).Check("Wait for device idle");
+        
+        _vk.DestroyDevice(_device, null);
         _vk.DestroyInstance(_instance, null);
         _vk.Dispose();
     }

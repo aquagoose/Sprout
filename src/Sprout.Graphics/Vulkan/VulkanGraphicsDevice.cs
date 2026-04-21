@@ -9,6 +9,8 @@ internal sealed unsafe class VulkanGraphicsDevice : GraphicsDevice
 
     private readonly Vk _vk;
     private readonly Instance _instance;
+    private readonly PhysicalDevice _physicalDevice;
+    private readonly Queues _queues;
 
     public override Backend Backend => Backend.Vulkan;
     
@@ -22,6 +24,9 @@ internal sealed unsafe class VulkanGraphicsDevice : GraphicsDevice
     {
         _vk = Vk.GetApi();
         _instance = VulkanUtils.CreateInstance(_vk, sdlWindow);
+        _physicalDevice = VulkanUtils.PickPhysicalDevice(_vk, _instance, out _queues, out string deviceName);
+        Console.WriteLine(deviceName);
+        
     }
     
     public override Shader CreateShader(in ShaderInfo info)

@@ -10,18 +10,18 @@ public enum Backend
     /// </summary>
     Unknown = 0,
     
-    /*/// <summary>
-    /// Vulkan 1.0. (Through SDL GPU) Runs on most platforms.
+    /// <summary>
+    /// Vulkan 1.3. Runs on most platforms.
     /// </summary>
     Vulkan = 1,
     
-    /// <summary>
-    /// DirectX 12. (Through SDL GPU) Runs on Windows.
+    /*/// <summary>
+    /// DirectX 12. Runs on Windows.
     /// </summary>
     D3D12 = 2,
     
     /// <summary>
-    /// Metal. (Through SDL GPU) Runs on Apple devices.
+    /// Metal. Runs on Apple devices.
     /// </summary>
     Metal = 3,*/
     

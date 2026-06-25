@@ -12,6 +12,11 @@ namespace Sprout.Graphics;
 
 public sealed unsafe class Font : IDisposable
 {
+    /// <summary>
+    /// Gets if this <see cref="Font"/> has been disposed.
+    /// </summary>
+    public bool IsDisposed { get; private set; }
+    
     private const uint Spacing = 1;
     
     private readonly GraphicsDevice _device;
@@ -27,6 +32,14 @@ public sealed unsafe class Font : IDisposable
     private uint _atlasY;
     private uint _maxCharSize;
     
+    /// <summary>
+    /// Create a <see cref="Font"/> from a file path.
+    /// </summary>
+    /// <param name="device">The <see cref="GraphicsDevice"/> to associate this font with.</param>
+    /// <param name="path">The path to the font.</param>
+    /// <param name="antialias">Whether or not anti-aliasing will be enabled.</param>
+    /// <param name="textureWidth">The width of the font textures. Unless you have a reason to adjust this, don't.</param>
+    /// <param name="textureHeight">The height of the font textures. Unless you have a reason to adjust this, don't.</param>
     public Font(GraphicsDevice device, string path, bool antialias = true, uint textureWidth = 1024,
         uint textureHeight = 1024)
     {
@@ -41,8 +54,15 @@ public sealed unsafe class Font : IDisposable
         _face = CreateFace(path);
     }
     
+    /// <summary>
+    /// Dispose of this <see cref="Font"/>.
+    /// </summary>
     public void Dispose()
     {
+        if (IsDisposed)
+            return;
+        IsDisposed = true;
+        
         foreach (Texture texture in _atlases)
             texture.Dispose();
 
@@ -54,6 +74,10 @@ public sealed unsafe class Font : IDisposable
         } while (face != null);
     }
 
+    /// <summary>
+    /// Add an additional font that will be used if a character does not exist in the other loaded fonts.
+    /// </summary>
+    /// <param name="path">The path to the font.</param>
     public void AddFont(string path)
     {
         FaceRec faceRec = CreateFace(path);
@@ -69,7 +93,7 @@ public sealed unsafe class Font : IDisposable
     /// <summary>
     /// Draw a string of text.
     /// </summary>
-    /// <param name="renderer">The <see cref="SpriteRenderer"/>. to draw using.</param>
+    /// <param name="renderer">The <see cref="SpriteRenderer"/> to draw with.</param>
     /// <param name="position">The position to draw the text at.</param>
     /// <param name="size">The font size, in pixels, that the text should be.</param>
     /// <param name="text">The text to draw.</param>
@@ -102,6 +126,12 @@ public sealed unsafe class Font : IDisposable
         }
     }
 
+    /// <summary>
+    /// Measure the pixel size of a text string.
+    /// </summary>
+    /// <param name="size">The font size, in pixels, of the text.</param>
+    /// <param name="text">The text string to measure.</param>
+    /// <returns>The size in pixels of the text.</returns>
     public Size MeasureText(uint size, string text)
     {
         Vector2 currentPos = Vector2.Zero;
@@ -194,7 +224,6 @@ public sealed unsafe class Font : IDisposable
         }
 
         Texture atlasTexture = _atlases[currentAtlas];
-        Console.WriteLine($"Update X: {_atlasX}, Y: {_atlasY}");
         atlasTexture.Update(_atlasX, _atlasY, bitmap.width, bitmap.rows, 0, bitmapData);
 
         character = new Character(currentAtlas,

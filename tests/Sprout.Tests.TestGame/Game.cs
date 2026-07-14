@@ -3,45 +3,45 @@ using Sprout.Graphics;
 
 namespace Sprout.Tests.TestGame;
 
-public class Game : App
+public class Game : IApp
 {
     private SpriteRenderer _spriteRenderer = null!;
     private Texture _texture = null!;
     private Vector2 _position;
     
-    protected override void Initialize()
+    public void Initialize(App app)
     {
-        _spriteRenderer = new SpriteRenderer(Graphics);
-        _texture = Graphics.CreateTexture("Content/BAGELMIP.png");
+        _spriteRenderer = new SpriteRenderer(app.Graphics);
+        _texture = app.Graphics.CreateTexture("Content/BAGELMIP.png");
     }
 
-    protected override void Update(float dt)
+    public void Update(App app, float dt)
     {
         const float speed = 100;
         
-        if (Input.IsKeyPressed(Key.Escape))
-            Close();
+        if (app.Input.IsKeyPressed(Key.Escape))
+            app.Close();
 
-        if (Input.IsKeyDown(Key.W))
+        if (app.Input.IsKeyDown(Key.W))
             _position.Y -= speed * dt;
-        if (Input.IsKeyDown(Key.S))
+        if (app.Input.IsKeyDown(Key.S))
             _position.Y += speed * dt;
-        if (Input.IsKeyDown(Key.D))
+        if (app.Input.IsKeyDown(Key.D))
             _position.X += speed * dt;
-        if (Input.IsKeyDown(Key.A))
+        if (app.Input.IsKeyDown(Key.A))
             _position.X -= speed * dt;
-        if (Input.IsKeyPressed(Key.Space))
-            _position = Input.MousePosition;
+        if (app.Input.IsKeyPressed(Key.Space))
+            _position = app.Input.MousePosition;
 
-        if (Input.IsMouseButtonDown(MouseButton.Left))
-            _position += Input.MouseDelta;
-        if (Input.IsMouseButtonPressed(MouseButton.Right))
-            _position = Input.MousePosition;
+        if (app.Input.IsMouseButtonDown(MouseButton.Left))
+            _position += app.Input.MouseDelta;
+        if (app.Input.IsMouseButtonPressed(MouseButton.Right))
+            _position = app.Input.MousePosition;
     }
 
-    protected override void Draw()
+    public void Draw(App app)
     {
-        Graphics.Clear(Color.CornflowerBlue);
+        app.Graphics.Clear(Color.CornflowerBlue);
         
         _spriteRenderer.Draw(_texture, _position);
         _spriteRenderer.Render();

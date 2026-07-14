@@ -5,34 +5,36 @@ using Sprout.Graphics;
 
 namespace Sprout;
 
-public abstract class App : IDisposable
+public sealed class App
 {
-    private Window _window = null!;
-    private GraphicsDevice _graphicsDevice = null!;
-    private AudioDevice _audioDevice = null!;
-    private EventManager _eventManager = null!;
-    private InputManager _inputManager = null!;
-    private bool _alive;
+    public readonly Window Window;
 
-    public Window Window => _window;
+    public readonly GraphicsDevice Graphics;
 
-    public GraphicsDevice Graphics => _graphicsDevice;
+    public readonly AudioDevice Audio;
 
-    public AudioDevice Audio => _audioDevice;
+    public readonly EventManager Events;
 
-    public EventManager Events => _eventManager;
+    public readonly InputManager Input;
 
-    public InputManager Input => _inputManager;
+    public bool IsRunning;
 
-    protected virtual void Initialize() { }
+    private App(Window window, GraphicsDevice graphics, AudioDevice audio, EventManager events, InputManager input)
+    {
+        Window = window;
+        Graphics = graphics;
+        Audio = audio;
+        Events = events;
+        Input = input;
+    }
 
-    protected virtual void Update(float dt) { }
+    private void AssignEvents()
+    {
+        Window.Resized += WindowOnResized;
+        Events.Quit += Close;
+    }
 
-    protected virtual void Draw() { }
-
-    protected virtual void Unload() { }
-
-    public void Run(in AppInfo info)
+    public static void Run(IApp app, in AppInfo info)
     {
         Backend backend = info.Backend;
         if (backend == Backend.Unknown)
@@ -43,49 +45,39 @@ public abstract class App : IDisposable
                 backend = Backend.OpenGL;
         }
 
-        _window = new Window(in info.Window, backend);
-        _window.Resized += WindowOnResized;
+        Window window = new Window(in info.Window, backend);
         
-        _graphicsDevice = GraphicsDevice.Create(_window.Handle, backend);
-        _audioDevice = new AudioDevice();
+        GraphicsDevice graphics = GraphicsDevice.Create(window.Handle, backend);
+        AudioDevice audio = new AudioDevice();
 
-        _eventManager = new EventManager(_window);
-        _inputManager = new InputManager(_eventManager);
-
-        _eventManager.Quit += Close;
+        EventManager events = new EventManager(window);
+        InputManager input = new InputManager(events);
         
-        Initialize();
+        App mainApp = new App(window, graphics, audio, events, input);
+        mainApp.AssignEvents();
+        
+        app.Initialize(mainApp);
         
         Stopwatch sw = Stopwatch.StartNew();
-        _alive = true;
-        while (_alive)
+        mainApp.IsRunning = true;
+        while (mainApp.IsRunning)
         {
-            _inputManager.Update();
-            _eventManager.PollEvents();
+            mainApp.Input.Update();
+            mainApp.Events.PollEvents();
 
             double dt = sw.Elapsed.TotalSeconds;
             sw.Restart();
 
-            Update((float) dt);
-            Draw();
+            app.Update(mainApp, (float) dt);
+            app.Draw(mainApp);
             
-            _graphicsDevice.Present();
+            mainApp.Graphics.Present();
         }
     }
 
     public void Close()
     {
-        _alive = false;
-    }
-
-    public void Dispose()
-    {
-        Unload();
-        _inputManager.Dispose();
-        _eventManager.Dispose();
-        _audioDevice.Dispose();
-        _graphicsDevice.Dispose();
-        _window.Dispose();
+        IsRunning = false;
     }
     
     private void WindowOnResized(uint width, uint height)

@@ -4,5 +4,14 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IsPackable>true</IsPackable>
+        <RepositoryUrl>https://github.com/aquagoose/Sprout</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <Authors>aquagoose</Authors>
+        <PackageTags>framework;graphics;audio;2d;opengl;directx;sdl</PackageTags>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageReadmeFile>README</PackageReadmeFile>
+        <Version>0.1.0</Version>
+        <Description>Cross-platform game framework.</Description>
     </PropertyGroup>
 </Project>

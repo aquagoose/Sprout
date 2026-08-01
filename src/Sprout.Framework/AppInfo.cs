@@ -1,7 +1,7 @@
 using System.Drawing;
 using Sprout.Graphics;
 
-namespace Sprout;
+namespace Sprout.Framework;
 
 public struct AppInfo(string appName, string appVersion)
 {

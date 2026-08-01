@@ -1,6 +1,6 @@
 using piko.SDL3;
 
-namespace Sprout;
+namespace Sprout.Framework;
 
 internal static class SdlUtils
 {

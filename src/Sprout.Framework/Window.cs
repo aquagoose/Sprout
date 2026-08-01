@@ -2,7 +2,7 @@
 using piko.SDL3;
 using Sprout.Graphics;
 
-namespace Sprout;
+namespace Sprout.Framework;
 
 public sealed class Window : IDisposable
 {

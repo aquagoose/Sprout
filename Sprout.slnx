@@ -20,8 +20,8 @@
   </Folder>
   <Project Path="src/Sprout.Audio/Sprout.Audio.csproj" />
   <Project Path="src/Sprout.Content/Sprout.Content.csproj" />
-  <Project Path="src/Sprout.EntitySystem/Sprout.EntitySystem.csproj" />
   <Project Path="src/Sprout.Graphics.ShaderUtils/Sprout.Graphics.ShaderUtils.csproj" />
   <Project Path="src/Sprout.Graphics/Sprout.Graphics.csproj" />
-  <Project Path="src/Sprout/Sprout.csproj" />
+  <Project Path="src\Sprout.Framework.SceneGraph\Sprout.Framework.SceneGraph.csproj" />
+  <Project Path="src\Sprout.Framework\Sprout.Framework.csproj" />
 </Solution>

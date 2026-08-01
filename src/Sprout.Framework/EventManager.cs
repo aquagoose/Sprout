@@ -1,7 +1,7 @@
 using System.Numerics;
 using piko.SDL3;
 
-namespace Sprout;
+namespace Sprout.Framework;
 
 public class EventManager : IDisposable
 {

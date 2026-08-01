@@ -1,7 +1,7 @@
 ﻿using Sprout.Audio;
 using Sprout.Graphics;
 
-namespace Sprout.EntitySystem;
+namespace Sprout.Framework.SceneGraph;
 
 public class Scene : IDisposable
 {

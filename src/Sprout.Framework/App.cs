@@ -1,9 +1,8 @@
 using System.Diagnostics;
-using System.Drawing;
 using Sprout.Audio;
 using Sprout.Graphics;
 
-namespace Sprout;
+namespace Sprout.Framework;
 
 public abstract class App : IDisposable
 {

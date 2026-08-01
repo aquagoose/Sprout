@@ -1,4 +1,4 @@
-namespace Sprout;
+namespace Sprout.Framework;
 
 public enum Key
 {

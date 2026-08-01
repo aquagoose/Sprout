@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using Sprout;
+using Sprout.Framework;
 using Sprout.Graphics;
 
 bool alive = true;

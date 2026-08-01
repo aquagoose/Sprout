@@ -1,4 +1,5 @@
 ﻿using Sprout;
+using Sprout.Framework;
 using Sprout.Tests.TestGame;
 
 AppInfo info = new AppInfo("Test Game", "1.0.0");

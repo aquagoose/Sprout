@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Sprout\Sprout.csproj" />
+      <ProjectReference Include="..\..\src\Sprout.Framework\Sprout.Framework.csproj" />
     </ItemGroup>
     
     <ItemGroup>

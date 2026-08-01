@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Sprout;
+namespace Sprout.Framework;
 
 public class InputManager : IDisposable
 {

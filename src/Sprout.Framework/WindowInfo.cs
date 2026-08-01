@@ -1,6 +1,6 @@
 using System.Drawing;
 
-namespace Sprout;
+namespace Sprout.Framework;
 
 public struct WindowInfo(string title, Size size, bool resizable = false, bool fullscreen = false)
 {

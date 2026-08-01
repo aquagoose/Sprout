@@ -1,4 +1,4 @@
-namespace Sprout.EntitySystem;
+namespace Sprout.Framework.SceneGraph;
 
 public class SceneManager : IDisposable
 {

@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using piko.SDL3;
 using Sprout.Content;
 using Sprout.Graphics.D3D11;
 using Sprout.Graphics.OpenGL;
@@ -170,7 +171,7 @@ public abstract class GraphicsDevice : IDisposable
     /// <param name="sdlWindow">The SDL3 window to create the device with.</param>
     /// <param name="backend">The <see cref="Sprout.Graphics.Backend"/> to use.</param>
     /// <returns>The created <see cref="GraphicsDevice"/>.</returns>
-    public static GraphicsDevice Create(IntPtr sdlWindow, Backend backend)
+    public static GraphicsDevice Create(SDL.Window sdlWindow, Backend backend)
     {
         return backend switch
         {

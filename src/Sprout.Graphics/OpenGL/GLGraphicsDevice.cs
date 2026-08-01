@@ -1,5 +1,5 @@
 using System.Drawing;
-using SDL3;
+using piko.SDL3;
 using Silk.NET.OpenGL;
 
 namespace Sprout.Graphics.OpenGL;
@@ -8,8 +8,8 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
 {
     public override bool IsDisposed { get; protected set; }
 
-    private readonly IntPtr _sdlWindow;
-    private readonly nint _glContext;
+    private readonly SDL.Window _sdlWindow;
+    private readonly SDL.GLContextState _glContext;
     private readonly GL _gl;
 
     private readonly Dictionary<int, uint> _framebuffers;
@@ -59,13 +59,13 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         }
     }
 
-    public GLGraphicsDevice(IntPtr sdlWindow)
+    public unsafe GLGraphicsDevice(SDL.Window sdlWindow)
     {
         _sdlWindow = sdlWindow;
         _framebuffers = [];
 
         _glContext = SDL.GLCreateContext(_sdlWindow);
-        if (_glContext == 0)
+        if (_glContext.IsNull)
             throw new Exception($"Failed to create GL context: {SDL.GetError()}");
 
         if (!SDL.GLMakeCurrent(_sdlWindow, _glContext))
@@ -73,7 +73,8 @@ internal sealed class GLGraphicsDevice : GraphicsDevice
         
         _gl = GL.GetApi(SDL.GLGetProcAddress);
 
-        SDL.GetWindowSizeInPixels(_sdlWindow, out int w, out int h);
+        int w, h;
+        SDL.GetWindowSizeInPixels(_sdlWindow, &w, &h);
         _swapchainSize = new Size(w, h);
         Viewport = new Viewport(0, 0, (uint) w, (uint) h);
         BlendMode = BlendMode.Disabled;

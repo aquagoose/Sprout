@@ -1,11 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <PackageReference Include="SDL3-CS" Version="3.3.7" />
-    <PackageReference Include="SDL3-CS.Native" Version="3.3.7" />
-  </ItemGroup>
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Sprout.Audio\Sprout.Audio.csproj" />
     <ProjectReference Include="..\Sprout.Content\Sprout.Content.csproj" />
     <ProjectReference Include="..\Sprout.Graphics\Sprout.Graphics.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="piko.SDL3" Version="0.0.4.1" />
   </ItemGroup>
 </Project>

@@ -1,23 +1,23 @@
 ﻿using System.Diagnostics;
 using System.Drawing;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using SDL3;
+using piko.SDL3;
 
 namespace Sprout.Graphics.Tests.Base;
 
 public abstract class TestBase(string testName) : IDisposable
 {
-    private IntPtr _window;
+    private SDL.Window _window;
     private bool _alive;
 
     protected GraphicsDevice Device;
 
-    protected Size WindowSize
+    protected unsafe Size WindowSize
     {
         get
         {
-            SDL.GetWindowSizeInPixels(_window, out int w, out int h);
+            int w, h;
+            SDL.GetWindowSizeInPixels(_window, &w, &h);
             return new Size(w, h);
         }
     }
@@ -41,27 +41,28 @@ public abstract class TestBase(string testName) : IDisposable
 
             Backend[] availableBackends = Enum.GetValues<Backend>();
             int numBackends = availableBackends.Length - 1;
-            SDL_MessageBoxButtonData* buttons = stackalloc SDL_MessageBoxButtonData[numBackends];
+            SDL.MessageBoxButtonData* buttons = stackalloc SDL.MessageBoxButtonData[numBackends];
 
             for (int i = 1; i < availableBackends.Length; i++)
             {
-                buttons[i - 1] = new SDL_MessageBoxButtonData
+                buttons[i - 1] = new SDL.MessageBoxButtonData
                 {
                     ButtonID = (int) availableBackends[i],
-                    Text = Marshal.StringToHGlobalAnsi(availableBackends[i].ToString())
+                    Text = (sbyte*) Marshal.StringToHGlobalAnsi(availableBackends[i].ToString())
                 };
             }
 
             SDL.MessageBoxData boxData = new()
             {
                 Flags = SDL.MessageBoxFlags.Information,
-                NumButtons = numBackends,
-                Buttons = (nint) buttons,
-                Title = "Select Backend",
-                Message = $"Select backend to run {testName}.",
+                Numbuttons = numBackends,
+                Buttons = buttons,
+                Title = (sbyte*) Marshal.StringToHGlobalAnsi("Select Backend"),
+                Message = (sbyte*) Marshal.StringToHGlobalAnsi($"Select backend to run {testName}."),
             };
 
-            SDL.ShowMessageBox(in boxData, out int buttonId);
+            int buttonId;
+            SDL.ShowMessageBox(&boxData, &buttonId);
             backend = (Backend) buttonId;
         }
 
@@ -77,12 +78,12 @@ public abstract class TestBase(string testName) : IDisposable
             
             case Backend.OpenGL:
             {
-                flags |= SDL.WindowFlags.OpenGL;
+                flags |= SDL.WindowFlags.Opengl;
                 SDL.GLSetAttribute(SDL.GLAttr.ContextMajorVersion, 3);
                 SDL.GLSetAttribute(SDL.GLAttr.ContextMinorVersion, 3);
                 SDL.GLSetAttribute(SDL.GLAttr.ContextProfileMask, (int) SDL.GLProfile.Core);
                 if (OperatingSystem.IsMacOS())
-                    SDL.GLSetAttribute(SDL.GLAttr.ContextFlags, (int) SDL.GLContextFlag.ForwardCompatible);
+                    SDL.GLSetAttribute(SDL.GLAttr.ContextFlags, (int) SDL.GLContextFlag.ForwardCompatibleFlag);
 
                 break;
             }
@@ -91,7 +92,7 @@ public abstract class TestBase(string testName) : IDisposable
         string appName = $"{testName} ({backend})";
         SDL.SetAppMetadata(appName, "1.0.0", "");
         _window = SDL.CreateWindow(appName, 800, 600, flags);
-        if (_window == 0)
+        if (_window.IsNull)
             throw new Exception($"Failed to create SDL window: {SDL.GetError()}");
 
         Device = GraphicsDevice.Create(_window, backend);
@@ -102,7 +103,8 @@ public abstract class TestBase(string testName) : IDisposable
         _alive = true;
         while (_alive)
         {
-            while (SDL.PollEvent(out SDL.Event winEvent))
+            SDL.Event winEvent;
+            while (SDL.PollEvent(&winEvent))
             {
                 switch ((SDL.EventType) winEvent.Type)
                 {
@@ -129,12 +131,5 @@ public abstract class TestBase(string testName) : IDisposable
         Device.Dispose();
         SDL.DestroyWindow(_window);
         SDL.Quit();
-    }
-
-    private struct SDL_MessageBoxButtonData
-    {
-        public int Flags;
-        public int ButtonID;
-        public nint Text;
     }
 }

@@ -1,5 +1,5 @@
 ﻿using MixrSharp;
-using SDL3;
+using piko.SDL3;
 using Sprout.Content;
 
 namespace Sprout.Audio;
@@ -7,12 +7,12 @@ namespace Sprout.Audio;
 public class AudioDevice : IDisposable
 {
     private readonly SDL.AudioStreamCallback _callback;
-    private readonly IntPtr _audioDevice;
+    private readonly SDL.AudioStream _audioDevice;
     private readonly Context _context;
 
     private List<StreamSound> _singleFireSounds;
 
-    public AudioDevice()
+    public unsafe AudioDevice()
     {
         if (!SDL.Init(SDL.InitFlags.Audio))
             throw new Exception($"Failed to initialize SDL: {SDL.GetError()}");
@@ -22,13 +22,13 @@ public class AudioDevice : IDisposable
         
         SDL.AudioSpec spec = new()
         {
-            Format = SDL.AudioFormat.AudioF32LE,
+            Format = SDL.AudioFormat.F32le,
             Freq = 48000,
             Channels = 2
         };
 
-        _audioDevice = SDL.OpenAudioDeviceStream(SDL.AudioDeviceDefaultPlayback, in spec, _callback, 0);
-        if (_audioDevice == 0)
+        _audioDevice = SDL.OpenAudioDeviceStream(SDL.AudioDeviceDefaultPlayback, &spec, _callback, null);
+        if (_audioDevice.IsNull)
             throw new Exception($"Failed to open audio device: {SDL.GetError()}");
         SDL.ResumeAudioStreamDevice(_audioDevice);
 
@@ -66,7 +66,7 @@ public class AudioDevice : IDisposable
         Console.WriteLine(_singleFireSounds.Count);
     }
 
-    private unsafe void AudioCallback(IntPtr userdata, IntPtr stream, int additionalAmount, int totalAmount)
+    private unsafe void AudioCallback(void* userdata, SDL.AudioStream stream, int additionalAmount, int totalAmount)
     {
         const int bufferSize = 512;
         float* buffer = stackalloc float[bufferSize];
@@ -75,7 +75,7 @@ public class AudioDevice : IDisposable
             int total = int.Min(additionalAmount, bufferSize);
             Span<float> bufferSlice = new Span<float>(buffer, total / 4);
             _context.MixToStereoF32Buffer(bufferSlice);
-            SDL.PutAudioStreamData(stream, (IntPtr) buffer, total);
+            SDL.PutAudioStreamData(stream, buffer, total);
             additionalAmount -= total;
         }
     }

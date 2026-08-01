@@ -1,5 +1,5 @@
 using System.Numerics;
-using SDL3;
+using piko.SDL3;
 
 namespace Sprout;
 
@@ -34,9 +34,10 @@ public class EventManager : IDisposable
         MouseMove = delegate { };
     }
 
-    public void PollEvents()
+    public unsafe void PollEvents()
     {
-        while (SDL.PollEvent(out SDL.Event winEvent))
+        SDL.Event winEvent;
+        while (SDL.PollEvent(&winEvent))
         {
             switch ((SDL.EventType) winEvent.Type)
             {
@@ -67,7 +68,7 @@ public class EventManager : IDisposable
                 case SDL.EventType.MouseMotion:
                     // TODO: Scale for the window scale factor
                     MouseMove(new Vector2(winEvent.Motion.X, winEvent.Motion.Y) * _window.PixelDensity,
-                        new Vector2(winEvent.Motion.XRel, winEvent.Motion.YRel) * _window.PixelDensity);
+                        new Vector2(winEvent.Motion.Xrel, winEvent.Motion.Yrel) * _window.PixelDensity);
                     break;
             }
         }

@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
-using SDL3;
+using piko.SDL3;
 using TerraFX.Interop.DirectX;
 using TerraFX.Interop.Windows;
 using static TerraFX.Interop.DirectX.D3D_FEATURE_LEVEL;
@@ -101,7 +101,7 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         }
     }
 
-    public D3D11GraphicsDevice(IntPtr sdlWindow)
+    public D3D11GraphicsDevice(SDL.Window sdlWindow)
     {
         _currentRenderTargets = new ID3D11RenderTargetView*[MaxRenderTargets];
         _samplers = [];
@@ -111,13 +111,14 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         if (OperatingSystem.IsWindows())
         {
             uint props = SDL.GetWindowProperties(sdlWindow);
-            hwnd = SDL.GetPointerProperty(props, SDL.Props.WindowWin32HWNDPointer, 0);
+            hwnd = (nint) SDL.GetPointerProperty(props, SDL.Prop.WindowWin32HwndPointer, null);
         }
         // DXVK compatibility
         else
-            hwnd = sdlWindow;
+            hwnd = sdlWindow.Handle;
 
-        SDL.GetWindowSizeInPixels(sdlWindow, out int width, out int height);
+        int width, height;
+        SDL.GetWindowSizeInPixels(sdlWindow, &width, &height);
         _swapchainSize = new Size(width, height);
 
         DXGI_SWAP_CHAIN_DESC swapchainDesc = new()

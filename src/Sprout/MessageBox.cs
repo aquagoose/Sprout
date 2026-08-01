@@ -1,10 +1,10 @@
-﻿using SDL3;
+﻿using piko.SDL3;
 
 namespace Sprout;
 
 public static class MessageBox
 {
-    public static void Show(Type type, string title, string message)
+    public static void Show(Type type, string title, string message, Window? window = null)
     {
         SDL.MessageBoxFlags flags = type switch
         {
@@ -14,7 +14,7 @@ public static class MessageBox
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
 
-        SDL.ShowSimpleMessageBox(flags, title, message, IntPtr.Zero);
+        SDL.ShowSimpleMessageBox(flags, title, message, window?.Handle ?? new SDL.Window());
     }
 
     public enum Type

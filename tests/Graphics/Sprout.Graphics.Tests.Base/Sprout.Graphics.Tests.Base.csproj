@@ -8,12 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="SDL3-CS" Version="3.3.7" />
-      <PackageReference Include="SDL3-CS.Native" Version="3.3.7" />
+      <ProjectReference Include="..\..\..\src\Sprout.Graphics\Sprout.Graphics.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\src\Sprout.Graphics\Sprout.Graphics.csproj" />
+      <PackageReference Include="piko.SDL3" Version="0.0.4.1" />
     </ItemGroup>
 
 </Project>

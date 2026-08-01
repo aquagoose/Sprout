@@ -14,9 +14,9 @@
     </ItemGroup>
     
     <ItemGroup>
-        <None Include="dxcompiler.dll" CopyToOutputDirectory="PreserveNewest" />
-        <None Include="libdxcompiler.so" CopyToOutputDirectory="PreserveNewest" />
-        <None Include="libdxcompiler.dylib" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="dxcompiler.dll" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes/win-x64/native" />
+        <None Include="libdxcompiler.so" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes/linux-x64/native" />
+        <None Include="libdxcompiler.dylib" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes/osx-arm64/native" />
     </ItemGroup>
 
 </Project>

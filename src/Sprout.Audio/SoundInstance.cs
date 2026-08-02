@@ -1,52 +1,69 @@
+using System.Diagnostics;
 using MixrSharp;
 
 namespace Sprout.Audio;
 
-public class SoundInstance : IDisposable
+public struct SoundInstance
 {
-    private readonly AudioSource _source;
-
-    internal event OnFinishedPlaying FinishedPlaying;
+    private readonly Sound.SourceInstance _source;
+    private readonly uint _instanceID;
 
     public float Volume
     {
-        get => _source.Volume;
-        set => _source.Volume = value;
+        get
+        {
+            Debug.Assert(_source.IsValid && _source.CurrentID == _instanceID,
+                "This sound instance is invalid and is not associated with any playing sound.");
+            return _source.Source.Volume;
+        }
+        set
+        {
+            Debug.Assert(_source.IsValid && _source.CurrentID == _instanceID,
+                "This sound instance is invalid and is not associated with any playing sound.");
+            _source.Source.Volume = value;
+        }
     }
 
     public double Speed
     {
-        get => _source.Speed;
-        set => _source.Speed = value;
+        get
+        {
+            Debug.Assert(_source.IsValid && _source.CurrentID == _instanceID,
+                "This sound instance is invalid and is not associated with any playing sound.");
+            return _source.Source.Speed;
+        }
+        set
+        {
+            Debug.Assert(_source.IsValid && _source.CurrentID == _instanceID,
+                "This sound instance is invalid and is not associated with any playing sound.");
+            _source.Source.Speed = value;
+        }
     }
 
-    public void Play()
+    public void Resume()
     {
-        _source.Play();
+        Debug.Assert(_source.IsValid && _source.CurrentID == _instanceID,
+            "This sound instance is invalid and is not associated with any playing sound.");
+        _source.Source.Play();
     }
 
     public void Pause()
     {
-        _source.Pause();
+        Debug.Assert(_source.IsValid && _source.CurrentID == _instanceID,
+            "This sound instance is invalid and is not associated with any playing sound.");
+        _source.Source.Pause();
     }
 
-    internal SoundInstance(AudioSource source)
+    public void Stop()
+    {
+        Debug.Assert(_source.IsValid && _source.CurrentID == _instanceID,
+            "This sound instance is invalid and is not associated with any playing sound.");
+        _source.Source.Stop();
+    }
+
+    internal SoundInstance(Sound.SourceInstance source, uint instanceId)
     {
         _source = source;
-        FinishedPlaying = delegate { };
-        _source.StateChanged += SourceOnStateChanged;
+        _instanceID = instanceId;
     }
-
-    private void SourceOnStateChanged(SourceState state)
-    {
-        if (state == SourceState.Stopped)
-            FinishedPlaying(this);
-    }
-
-    public void Dispose()
-    {
-        _source.Dispose();
-    }
-
-    internal delegate void OnFinishedPlaying(SoundInstance instance);
 }

@@ -8,7 +8,9 @@ public class Sound : IDisposable
     private readonly Context _context;
     private readonly AudioFormat _format;
     private readonly AudioBuffer _buffer;
-    private readonly List<SoundInstance> _instances;
+
+    private readonly List<SourceInstance> _activeSources;
+    private readonly Queue<SourceInstance> _sourcePool;
     
     internal Sound(Context context, string path)
     {
@@ -19,42 +21,78 @@ public class Sound : IDisposable
         
         byte[] buffer = stream.GetPcm();
         _buffer = _context.CreateBuffer(buffer);
-        
-        _instances = [];
+
+        _activeSources = [];
+        _sourcePool = [];
     }
 
     public SoundInstance Play(float volume = 1.0f, double speed = 1.0)
     {
-        SourceDescription description = new()
+        if (!_sourcePool.TryDequeue(out SourceInstance source))
         {
-            Format = _format,
-            Type = SourceType.Pcm
-        };
-        AudioSource source = _context.CreateSource(description);
-        source.Volume = volume;
-        source.Speed = speed;
-        source.SubmitBuffer(_buffer);
-        SoundInstance instance = new SoundInstance(source);
-        _instances.Add(instance);
-        // TODO: This implementation is absolutely god awful!! I hate it
-        instance.FinishedPlaying += InstanceOnFinishedPlaying;
-        instance.Play();
+            SourceDescription description = new()
+            {
+                Format = _format,
+                Type = SourceType.Pcm
+            };
+            source = new SourceInstance(_context.CreateSource(description));
+        }
 
-        return instance;
+        source.IsValid = true;
+        source.CurrentID++;
+
+        _activeSources.Add(source);
+        source.Finished += SourceFinished;
+
+        source.Source.Volume = volume;
+        source.Source.Speed = speed;
+        source.Source.SubmitBuffer(_buffer);
+        source.Source.Play();
+
+        return new SoundInstance(source, source.CurrentID);
     }
 
-    private void InstanceOnFinishedPlaying(SoundInstance instance)
+    private void SourceFinished(SourceInstance instance)
     {
-        Console.WriteLine("Finished");
-        _instances.Remove(instance);
-        instance.Dispose();
+        instance.Finished -= SourceFinished;
+        _activeSources.Remove(instance);
+        _sourcePool.Enqueue(instance);
     }
 
     public void Dispose()
     {
-        foreach (SoundInstance instance in _instances)
-            instance.Dispose();
+        foreach (SourceInstance source in _activeSources)
+            source.Source.Dispose();
+        foreach (SourceInstance source in _sourcePool)
+            source.Source.Dispose();
         
         _buffer.Dispose();
+    }
+
+    internal class SourceInstance
+    {
+        public event OnFinished Finished = delegate { };
+
+        public readonly AudioSource Source;
+
+        public bool IsValid;
+        public uint CurrentID;
+
+        public SourceInstance(AudioSource source)
+        {
+            Source = source;
+            source.StateChanged += SourceOnStateChanged;
+        }
+
+        private void SourceOnStateChanged(SourceState state)
+        {
+            if (state == SourceState.Stopped)
+            {
+                IsValid = false;
+                Finished(this);
+            }
+        }
+
+        public delegate void OnFinished(SourceInstance instance);
     }
 }

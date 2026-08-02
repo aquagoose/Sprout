@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using MixrSharp;
 using MixrSharp.Stream;
 
@@ -18,6 +19,8 @@ public class StreamSound : IDisposable
     private readonly AudioBuffer[] _audioBuffers;
     private readonly byte[] _buffer;
     private uint _currentBuffer;
+
+    private Task? _currentTask;
 
     public bool Looping;
 
@@ -75,46 +78,48 @@ public class StreamSound : IDisposable
 
     private void SourceOnBufferFinished()
     {
-        ulong bytePos = _stream.PositionInSamples * _format.BytesPerSample * _format.Channels;
-        ulong bytesReceived = _stream.GetBuffer(_buffer);
-        
-        byte[] buffer = _buffer;
+        // wait for any current thread to complete before we try and write data again.
+        // this shouldn't really be hit on a fast enough machine but its a good failsafe
+        _currentTask?.Wait();
+        _currentTask?.Dispose();
 
-        if (LoopEnd != 0)
+        // run in its own thread so that it doesn't block the audio thread
+        _currentTask = Task.Run(() =>
         {
             ulong loopEnd = LoopEnd == 0 ? _stream.LengthInSamples : LoopEnd;
+            // calculate the loop end point, and current position, in bytes
             ulong loopEndBytes = loopEnd * _format.BytesPerSample * _format.Channels;
+            ulong bytePos = _stream.PositionInSamples * _format.BytesPerSample * _format.Channels;
+
+            ulong bytesReceived = _stream.GetBuffer(_buffer);
+
+            // clamp the number of bytes received so it won't push it past the loop point
             if (Looping && bytePos + bytesReceived > loopEndBytes)
-            {
-                ulong length = loopEndBytes - bytePos;
-                buffer = _buffer[..(int) length];
-                _stream.SeekToSample(LoopStart);
-            }
-        }
-        
-        if (bytesReceived < (ulong) _buffer.Length)
-        {
-            if (Looping)
-            {
-                _stream.SeekToSample(LoopStart);
-                bytesReceived = _stream.GetBuffer(_buffer);
-                if (bytesReceived == 0)
-                    return;
-            }
-            else
-            {
-                _source.Looping = false;
-                if (bytesReceived == 0)
-                    return;
+                bytesReceived = loopEndBytes - bytePos;
 
-                buffer = _buffer[..(int) bytesReceived];
+            if (bytesReceived < (ulong) _buffer.Length)
+            {
+                if (Looping)
+                {
+                    // calculate the number of bytes we still need to fill in the buffer
+                    ulong bytesRemaining = (ulong) _buffer.Length - bytesReceived;
+                    _stream.SeekToSample(LoopStart);
+                    ulong newBytesReceived =
+                        _stream.GetBuffer(new Span<byte>(_buffer, (int) bytesReceived, (int) bytesRemaining));
+                    Debug.Assert(newBytesReceived != 0);
+                    bytesReceived += newBytesReceived;
+                }
+                else
+                    _source.Looping = false;
             }
-        }
-        
-        _audioBuffers[_currentBuffer].Update(buffer);
-        _source.SubmitBuffer(_audioBuffers[_currentBuffer]);
 
-        _currentBuffer = (_currentBuffer + 1) % NumBuffers;
+            Debug.Assert(bytesReceived != 0);
+
+            _audioBuffers[_currentBuffer].Update(new ReadOnlySpan<byte>(_buffer, 0, (int) bytesReceived));
+            _source.SubmitBuffer(_audioBuffers[_currentBuffer]);
+
+            _currentBuffer = (_currentBuffer + 1) % NumBuffers;
+        });
     }
 
     private void SourceOnStateChanged(SourceState state)
@@ -155,7 +160,9 @@ public class StreamSound : IDisposable
     public void Dispose()
     {
         FinishedPlaying = delegate { };
-        
+
+        _currentTask?.Wait();
+        _currentTask?.Dispose();
         _source.Dispose();
         
         foreach (AudioBuffer buffer in _audioBuffers)

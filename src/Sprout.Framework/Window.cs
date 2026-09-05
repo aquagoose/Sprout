@@ -22,8 +22,7 @@ public sealed class Window : IDisposable
     {
         get
         {
-            int w, h;
-            unsafe { SDL.GetWindowSizeInPixels(_window, &w, &h); }
+            SDL.GetWindowSizeInPixels(_window, out int w, out int h);
             return new Size(w, h);
         }
         set => SDL.SetWindowSize(_window, value.Width, value.Height);
@@ -32,7 +31,7 @@ public sealed class Window : IDisposable
     public bool Fullscreen
     {
         get => (SDL.GetWindowFlags(_window) & SDL.WindowFlags.Fullscreen) != 0;
-        set => SDL.SetWindowFullscreen(_window, (byte) (value ? 1 : 0));
+        set => SDL.SetWindowFullscreen(_window, value);
     }
 
     public float PixelDensity => SDL.GetWindowPixelDensity(_window);

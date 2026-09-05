@@ -6,12 +6,12 @@
 
     <ItemGroup>
       <PackageReference Include="FreeTypeSharp" Version="3.1.0" />
-      <PackageReference Include="piko.SDL3" Version="0.0.5" />
+      <PackageReference Include="piko.SDL3" Version="0.0.6" />
       <PackageReference Include="Silk.NET.OpenGL" Version="2.23.0" />
       <PackageReference Include="Silk.NET.Vulkan" Version="2.23.0" />
       <PackageReference Include="Silk.NET.Vulkan.Extensions.EXT" Version="2.23.0" />
       <PackageReference Include="Silk.NET.Vulkan.Extensions.KHR" Version="2.23.0" />
-      <PackageReference Include="StbImageSharp" Version="2.30.15" />
+      <PackageReference Include="StbImageSharp" Version="2.30.16" />
       <PackageReference Include="TerraFX.Interop.Windows" Version="10.0.26100.6" />
     </ItemGroup>
 

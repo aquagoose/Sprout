@@ -111,7 +111,7 @@ internal sealed unsafe class D3D11GraphicsDevice : GraphicsDevice
         if (OperatingSystem.IsWindows())
         {
             uint props = SDL.GetWindowProperties(sdlWindow);
-            hwnd = (nint) SDL.GetPointerProperty(props, SDL.Prop.WindowWin32HwndPointer, null);
+            hwnd = (nint) SDL.GetPointerProperty(props, SDL.Prop.WindowWin32HwndPointer, 0);
         }
         // DXVK compatibility
         else

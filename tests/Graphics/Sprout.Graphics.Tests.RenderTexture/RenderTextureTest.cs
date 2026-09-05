@@ -29,17 +29,17 @@ public class RenderTextureTest() : TestBase("Render Texture Test")
         Device.SetRenderTexture(_renderTexture);
         Device.Clear(Color.CornflowerBlue);
 
-        _renderer.Draw(_texture, new Vector2(128) / 2, _rotation, new Vector2(0.2f),
-            new Vector2(_texture.Size.Width, _texture.Size.Height) / 2);
-        _renderer.Render();
+        using (SpriteRenderer.Pass pass = _renderer.BeginPass())
+        {
+            pass.Draw(_texture, new Vector2(128) / 2, _rotation, new Vector2(0.2f),
+                new Vector2(_texture.Size.Width, _texture.Size.Height) / 2);
+        }
         
         Device.SetRenderTexture(null);
         Device.Clear(Color.Black);
-        
-        _renderer.Draw(_renderTexture, new Vector2(0), WindowSize);
-        _renderer.Render();
-        
-        Device.Present();
+
+        using (SpriteRenderer.Pass pass = _renderer.BeginPass())
+            pass.Draw(_renderTexture, new Vector2(0), WindowSize);
     }
 
     public override void Dispose()

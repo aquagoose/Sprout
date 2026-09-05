@@ -23,6 +23,7 @@ public class SpritePerformanceTest() : TestBase("Sprite Renderer Performance Tes
             _value -= float.Pi * 2;
         
         Device.Clear(Color.Black);
+        using SpriteRenderer.Pass pass = _renderer.BeginPass();
 
         Size windowSize = WindowSize;
         float h = _value;
@@ -30,14 +31,10 @@ public class SpritePerformanceTest() : TestBase("Sprite Renderer Performance Tes
         {
             for (int x = 0; x < windowSize.Width; x++)
             {
-                _renderer.Draw(_white, new Vector2(x, y), tint: Color.FromHSV(h, 1, 1));
+                pass.Draw(_white, new Vector2(x, y), tint: Color.FromHSV(h, 1, 1));
                 h += 0.0001f;
             }
         }
-        
-        _renderer.Render();
-        
-        Device.Present();
     }
 
     public override void Dispose()

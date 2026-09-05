@@ -34,7 +34,6 @@ public class SimpleShaderTest() : TestBase("Simple Shader Test")
     {
         Device.Clear(Color.CornflowerBlue);
         _renderable.Draw(3);
-        Device.Present();
     }
 
     public override void Dispose()

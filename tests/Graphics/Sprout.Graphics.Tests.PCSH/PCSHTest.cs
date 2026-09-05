@@ -34,7 +34,6 @@ public class PCSHTest() : TestBase("PCSH Test")
     {
         Device.Clear(new Color(1.0f, 0.5f, 0.25f));
         _renderable.Draw(3);
-        Device.Present();
     }
 
     public override void Dispose()

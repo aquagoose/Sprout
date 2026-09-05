@@ -84,7 +84,6 @@ public class TextureTest() : TestBase("Texture Test")
         _renderable.Draw();
         _shader.PushUniformData(1, Matrix4x4.CreateRotationZ(-_rotation));
         _renderable.Draw();
-        Device.Present();
     }
 
     public override void Dispose()

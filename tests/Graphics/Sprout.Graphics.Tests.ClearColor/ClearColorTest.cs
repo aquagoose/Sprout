@@ -32,6 +32,5 @@ public class ClearColorTest() : TestBase("Clear Color")
         }
         
         Device.Clear(_colors[_currentColor]);
-        Device.Present();
     }
 }

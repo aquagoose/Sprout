@@ -43,8 +43,8 @@ public class Game : App
     protected override void Draw()
     {
         Graphics.Clear(Color.CornflowerBlue);
-        
-        _spriteRenderer.Draw(_texture, _position);
-        _spriteRenderer.Render();
+
+        using SpriteRenderer.Pass pass = _spriteRenderer.BeginPass();
+        pass.Draw(_texture, _position);
     }
 }

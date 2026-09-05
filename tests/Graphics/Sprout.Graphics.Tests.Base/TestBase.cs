@@ -123,6 +123,7 @@ public abstract class TestBase(string testName) : IDisposable
             float dt = (float) sw.Elapsed.TotalSeconds;
             sw.Restart();
             Loop(dt);
+            Device.Present();
         }
     }
 

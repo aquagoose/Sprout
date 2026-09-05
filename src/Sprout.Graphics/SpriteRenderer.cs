@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Drawing;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -23,6 +24,11 @@ public class SpriteRenderer : IDisposable
     private readonly Vertex[] _vertices;
     private readonly uint[] _indices;
     private readonly List<Sprite> _drawList;
+
+    private Pass? _currentPass;
+    private Matrix4x4 _projection;
+    private Matrix4x4 _transform;
+    private BlendMode _blendMode;
 
     public SpriteRenderer(GraphicsDevice device)
     {
@@ -67,83 +73,33 @@ public class SpriteRenderer : IDisposable
         _drawList = [];
     }
 
-    public void Draw(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight,
-        Rectangle? source = null, Color? tint = null, SpriteFlip flip = SpriteFlip.None)
+    public Pass BeginPass(Matrix4x4? transform = null, BlendMode? blendMode = null, Matrix4x4? projection = null)
     {
-        Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
-        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
-    }
+        Debug.Assert(_currentPass == null, "A draw pass is already active!");
 
-    public void Draw(Texture texture, Vector2 position, Rectangle? source = null, Color? tint = null,
-        SpriteFlip flip = SpriteFlip.None)
-    {
-        Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
-        
-        Vector2 topLeft = position;
-        Vector2 topRight = new Vector2(position.X + src.Width, position.Y);
-        Vector2 bottomLeft = new Vector2(position.X, position.Y + src.Height);
-        Vector2 bottomRight = new Vector2(topRight.X, bottomLeft.Y);
-        
-        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
-    }
-
-    public void Draw(Texture texture, Vector2 position, Size size, Rectangle? source = null, Color? tint = null,
-        SpriteFlip flip = SpriteFlip.None)
-    {
-        Vector2 topLeft = position;
-        Vector2 topRight = new Vector2(position.X + size.Width, position.Y);
-        Vector2 bottomLeft = new Vector2(position.X, position.Y + size.Height);
-        Vector2 bottomRight = new Vector2(position.X + size.Width, position.Y + size.Height);
-        
-        Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
-        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
-    }
-
-    public void Draw(Texture texture, Rectangle region, Rectangle? source = null, Color? tint = null,
-        SpriteFlip flip = SpriteFlip.None)
-        => Draw(texture, new Vector2(region.X, region.Y), region.Size, source, tint, flip);
-
-    public void Draw(Texture texture, Matrix3x2 transform, Rectangle? source = null, Color? tint = null,
-        SpriteFlip flip = SpriteFlip.None)
-    {
-        Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
-
-        Vector2 topLeft = Vector2.Transform(new Vector2(0, 0), transform);
-        Vector2 topRight = Vector2.Transform(new Vector2(src.Width, 0), transform);
-        Vector2 bottomLeft = Vector2.Transform(new Vector2(0, src.Height), transform);
-        Vector2 bottomRight = Vector2.Transform(new Vector2(src.Width, src.Height), transform);
-        
-        _drawList.Add(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
-    }
-
-    public void Draw(Texture texture, Vector2 position, float rotation, Vector2 scale, Vector2 origin,
-        Rectangle? source = null, Color? tint = null, SpriteFlip flip = SpriteFlip.None)
-    {
-        Matrix3x2 matrix = Matrix3x2.CreateTranslation(-origin) *
-                           Matrix3x2.CreateScale(scale) *
-                           Matrix3x2.CreateRotation(rotation) *
-                           Matrix3x2.CreateTranslation(position);
-        
-        Draw(texture, matrix, source, tint, flip);
-    }
-
-    /// <summary>
-    /// Clear the draw list. Use this to "cancel", if you will not be calling <see cref="Render"/>.
-    /// </summary> 
-    public void Clear()
-    {
-        _drawList.Clear();
-    }
-
-    public void Render(Matrix4x4? transform = null, BlendMode? blendMode = null, Matrix4x4? projection = null)
-    {
-        _device.BlendMode = blendMode ?? BlendMode.NonPremultiplied;
         Viewport viewport = _device.Viewport;
+        _projection = projection ?? Matrix4x4.CreateOrthographicOffCenter(0, viewport.Width, viewport.Height, 0, -1, 1);
+        _transform = transform ?? Matrix4x4.Identity;
+        _blendMode = blendMode ?? BlendMode.NonPremultiplied;
 
-        TransformMatrices matrices = new TransformMatrices(
-            projection ?? Matrix4x4.CreateOrthographicOffCenter(0, viewport.Width, viewport.Height, 0, -1, 1),
-            transform ?? Matrix4x4.Identity);
-        
+        Pass pass = new Pass(this);
+        _currentPass = pass;
+        return pass;
+    }
+
+    private void Draw(in Sprite sprite)
+    {
+        Debug.Assert(_currentPass != null, "No draw pass is active!");
+        _drawList.Add(sprite);
+    }
+
+    private void Finish()
+    {
+        Debug.Assert(_currentPass != null, "No draw pass is active!");
+
+        _device.BlendMode = _blendMode;
+
+        TransformMatrices matrices = new TransformMatrices(_projection, _transform);
         _shader.PushUniformData(0, matrices);
         
         Texture? currentTexture = null;
@@ -236,6 +192,7 @@ public class SpriteRenderer : IDisposable
             Flush(currentDraw, currentTexture);
         
         _drawList.Clear();
+        _currentPass = null;
     }
 
     private void Flush(uint numDraws, Texture texture)
@@ -254,6 +211,81 @@ public class SpriteRenderer : IDisposable
     {
         _renderable.Dispose();
         _shader.Dispose();
+    }
+
+    public struct Pass : IDisposable
+    {
+        private SpriteRenderer _renderer;
+
+        internal Pass(SpriteRenderer renderer)
+        {
+            _renderer = renderer;
+        }
+
+        public void Draw(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight,
+            Rectangle? source = null, Color? tint = null, SpriteFlip flip = SpriteFlip.None)
+        {
+            Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
+            _renderer.Draw(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
+        }
+
+        public void Draw(Texture texture, Vector2 position, Rectangle? source = null, Color? tint = null,
+        SpriteFlip flip = SpriteFlip.None)
+        {
+            Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
+
+            Vector2 topLeft = position;
+            Vector2 topRight = new Vector2(position.X + src.Width, position.Y);
+            Vector2 bottomLeft = new Vector2(position.X, position.Y + src.Height);
+            Vector2 bottomRight = new Vector2(topRight.X, bottomLeft.Y);
+
+            _renderer.Draw(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
+        }
+
+        public void Draw(Texture texture, Vector2 position, Size size, Rectangle? source = null, Color? tint = null,
+            SpriteFlip flip = SpriteFlip.None)
+        {
+            Vector2 topLeft = position;
+            Vector2 topRight = new Vector2(position.X + size.Width, position.Y);
+            Vector2 bottomLeft = new Vector2(position.X, position.Y + size.Height);
+            Vector2 bottomRight = new Vector2(position.X + size.Width, position.Y + size.Height);
+
+            Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
+            _renderer.Draw(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
+        }
+
+        public void Draw(Texture texture, Rectangle region, Rectangle? source = null, Color? tint = null,
+            SpriteFlip flip = SpriteFlip.None)
+            => Draw(texture, new Vector2(region.X, region.Y), region.Size, source, tint, flip);
+
+        public void Draw(Texture texture, Matrix3x2 transform, Rectangle? source = null, Color? tint = null,
+            SpriteFlip flip = SpriteFlip.None)
+        {
+            Rectangle src = source ?? new Rectangle(Point.Empty, texture.Size);
+
+            Vector2 topLeft = Vector2.Transform(new Vector2(0, 0), transform);
+            Vector2 topRight = Vector2.Transform(new Vector2(src.Width, 0), transform);
+            Vector2 bottomLeft = Vector2.Transform(new Vector2(0, src.Height), transform);
+            Vector2 bottomRight = Vector2.Transform(new Vector2(src.Width, src.Height), transform);
+
+            _renderer.Draw(new Sprite(texture, topLeft, topRight, bottomLeft, bottomRight, src, tint ?? Color.White, flip));
+        }
+
+        public void Draw(Texture texture, Vector2 position, float rotation, Vector2 scale, Vector2 origin,
+            Rectangle? source = null, Color? tint = null, SpriteFlip flip = SpriteFlip.None)
+        {
+            Matrix3x2 matrix = Matrix3x2.CreateTranslation(-origin) *
+                               Matrix3x2.CreateScale(scale) *
+                               Matrix3x2.CreateRotation(rotation) *
+                               Matrix3x2.CreateTranslation(position);
+
+            Draw(texture, matrix, source, tint, flip);
+        }
+
+        public void Dispose()
+        {
+            _renderer.Finish();
+        }
     }
 
     private readonly struct Sprite

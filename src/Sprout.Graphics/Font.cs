@@ -93,12 +93,12 @@ public sealed unsafe class Font : IDisposable
     /// <summary>
     /// Draw a string of text.
     /// </summary>
-    /// <param name="renderer">The <see cref="SpriteRenderer"/> to draw with.</param>
+    /// <param name="pass">The <see cref="SpriteRenderer.Pass"/> to draw with.</param>
     /// <param name="position">The position to draw the text at.</param>
     /// <param name="size">The font size, in pixels, that the text should be.</param>
     /// <param name="text">The text to draw.</param>
     /// <param name="color">The text color.</param>
-    public void Draw(SpriteRenderer renderer, Vector2 position, uint size, string text, Color color)
+    public void Draw(SpriteRenderer.Pass pass, Vector2 position, uint size, string text, Color color)
     {
         Vector2 currentPos = position;
 
@@ -121,7 +121,7 @@ public sealed unsafe class Font : IDisposable
 
             Vector2 pos = currentPos + new Vector2(character.Bearing.X, -character.Bearing.Y + character.Ascender);
 
-            renderer.Draw(texture, pos, source: character.SourceRectangle, tint: color);
+            pass.Draw(texture, pos, source: character.SourceRectangle, tint: color);
             currentPos.X += character.Advance;
         }
     }

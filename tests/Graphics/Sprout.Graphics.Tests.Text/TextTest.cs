@@ -19,12 +19,10 @@ public class TextTest() : TestBase("Text Test")
     protected override void Loop(float dt)
     {
         Device.Clear(Color.CornflowerBlue);
-        
-        _font.Draw(_renderer, Vector2.Zero, 48, "Hello world!😀🌱👍\nこれは日本語のテキストです！", Color.White);
-        _font.Draw(_renderer, new Vector2(0, 60), 232, "Huge Text Big Large", Color.White);
-        _renderer.Render();
-        
-        Device.Present();
+        using SpriteRenderer.Pass pass = _renderer.BeginPass();
+
+        _font.Draw(pass, Vector2.Zero, 48, "Hello world!😀🌱👍\nこれは日本語のテキストです！", Color.White);
+        _font.Draw(pass, new Vector2(0, 60), 232, "Huge Text Big Large", Color.White);
     }
 
     public override void Dispose()

@@ -59,6 +59,5 @@ public class BuffersTest() : TestBase("Buffers Test")
     {
         Device.Clear(Color.CornflowerBlue);
         _renderable.Draw();
-        Device.Present();
     }
 }
